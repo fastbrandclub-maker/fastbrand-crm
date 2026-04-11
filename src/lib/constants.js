@@ -44,3 +44,10 @@ export const ROLES = {
 }
 
 export const INACTIVITY_DAYS = 7
+
+export const TEAM = [
+  { name: 'Lilian', phone: '33766808428' },
+  { name: 'Selim', phone: '33761109743' },
+  { name: 'Aya', phone: '33627396556' },
+  { name: 'Ronaldo', phone: '33641016134' },
+]
