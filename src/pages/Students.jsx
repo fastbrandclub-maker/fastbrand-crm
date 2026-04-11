@@ -1,6 +1,25 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink } from 'lucide-react'
+import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, Bell } from 'lucide-react'
+
+const RONALDO_PHONE = '33641016134'
+
+function RelanceButton({ firstName }) {
+  const message = encodeURIComponent(`Hello, tu peux relancer ${firstName} ça fait 5 jours qu'on a pas échangé`)
+  const url = `https://wa.me/${RONALDO_PHONE}?text=${message}`
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
+      title={`Relancer ${firstName} via WhatsApp`}
+      className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors shrink-0"
+    >
+      <Bell size={14} className="text-amber-400" />
+    </a>
+  )
+}
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { STEPS, INACTIVITY_DAYS } from '../lib/constants'
@@ -158,7 +177,7 @@ export default function Students() {
                     </div>
                   </div>
 
-                  {/* Progress */}
+                  {/* Progress + actions */}
                   <div className="hidden sm:flex items-center gap-3 shrink-0">
                     <div className="w-28">
                       <div className="flex items-center justify-between mb-1">
@@ -172,6 +191,7 @@ export default function Students() {
                         />
                       </div>
                     </div>
+                    <RelanceButton firstName={student.first_name} />
                     <ChevronRight size={15} className="text-zinc-600 group-hover:text-brand-red transition-colors" />
                   </div>
                 </div>
