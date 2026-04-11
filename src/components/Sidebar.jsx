@@ -3,6 +3,8 @@ import {
   LayoutDashboard,
   Users,
   Columns,
+  CalendarDays,
+  BookOpen,
   LogOut,
   Zap,
 } from 'lucide-react'
@@ -13,6 +15,8 @@ const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/students', icon: Users, label: 'Élèves' },
   { to: '/kanban', icon: Columns, label: 'Kanban' },
+  { to: '/calendar', icon: CalendarDays, label: 'Calendrier' },
+  { to: '/resources', icon: BookOpen, label: 'Ressources' },
 ]
 
 export default function Sidebar() {
