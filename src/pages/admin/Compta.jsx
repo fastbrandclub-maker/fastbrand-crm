@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { differenceInDays, addDays, addMonths, format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { AlertTriangle, Clock, Plus, TrendingUp, Wallet, X, Receipt, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
+import { AlertTriangle, Clock, Plus, TrendingUp, Wallet, X, Receipt, ChevronDown, ChevronUp, Pencil, CheckCircle2, Circle } from 'lucide-react'
 import Button from '../../components/ui/Button'
 
 function getExpiryDate(offre, datePaiement) {
@@ -150,6 +150,8 @@ export default function Compta() {
   const totalNet = filteredEntries.reduce((s, e) => s + (Number(e.net_apres_frais) || 0), 0)
   const totalFrais = filteredFrais.reduce((s, f) => s + (Number(f.montant) || 0), 0)
   const netReel = totalNet - totalFrais
+  const payeCloserCount = filteredEntries.filter(e => e.paye_closer).length
+  const payeCoachCount = filteredEntries.filter(e => e.paye_coach).length
 
   // Warnings (toujours sur tout)
   const today = new Date()
@@ -218,7 +220,7 @@ export default function Compta() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-7 gap-3 mb-5">
         {[
           { label: 'Collecté', value: fmt(totalCollecte), color: 'text-emerald-400' },
           { label: 'Restant dû', value: fmt(totalRestant), color: totalRestant > 0 ? 'text-amber-400' : 'text-zinc-400' },
@@ -231,6 +233,19 @@ export default function Compta() {
             <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
           </div>
         ))}
+        {/* Payés */}
+        <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+          <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-2">Closer payé</p>
+          <p className={`text-xl font-bold ${payeCloserCount === filteredEntries.length && filteredEntries.length > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+            {payeCloserCount}<span className="text-sm font-normal text-zinc-500">/{filteredEntries.length}</span>
+          </p>
+        </div>
+        <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+          <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-2">Coach payé</p>
+          <p className={`text-xl font-bold ${payeCoachCount === filteredEntries.length && filteredEntries.length > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+            {payeCoachCount}<span className="text-sm font-normal text-zinc-500">/{filteredEntries.length}</span>
+          </p>
+        </div>
       </div>
 
       {/* Warnings */}
@@ -425,7 +440,7 @@ export default function Compta() {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b border-brand-border/50">
-                            {['Client', 'Closer', 'Offre', 'Prix', 'Reçu', 'Restant', 'Frais closer', 'Net', 'Paiement', 'Payé', ''].map(h => (
+                            {['Client', 'Closer', 'Offre', 'Prix', 'Reçu', 'Restant', 'Frais closer', 'Net', 'Paiement', ''].map(h => (
                               <th key={h} className="px-3 py-2 text-left text-zinc-500 font-medium whitespace-nowrap">{h}</th>
                             ))}
                           </tr>
@@ -451,25 +466,13 @@ export default function Compta() {
                                 <td className="px-3 py-2.5 text-blue-400 font-medium">{fmt(e.net_apres_frais)}</td>
                                 <td className="px-3 py-2.5 text-zinc-500 max-w-[100px] truncate">{e.moyen_paiement ?? '—'}</td>
                                 <td className="px-3 py-2.5">
-                                  <div className="flex items-center gap-1.5">
-                                    <button
-                                      onClick={() => togglePaye(e.id, 'paye_closer', e.paye_closer)}
-                                      title="Closer payé"
-                                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors ${e.paye_closer ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
-                                    >
-                                      closer
-                                    </button>
-                                    <button
-                                      onClick={() => togglePaye(e.id, 'paye_coach', e.paye_coach)}
-                                      title="Coach payé"
-                                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors ${e.paye_coach ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
-                                    >
-                                      coach
-                                    </button>
-                                  </div>
-                                </td>
-                                <td className="px-3 py-2.5">
                                   <div className="flex items-center gap-2">
+                                    <button onClick={() => togglePaye(e.id, 'paye_closer', e.paye_closer)} title="Closer payé" className="transition-colors">
+                                      {e.paye_closer ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Circle size={13} className="text-zinc-600 hover:text-zinc-400" />}
+                                    </button>
+                                    <button onClick={() => togglePaye(e.id, 'paye_coach', e.paye_coach)} title="Coach payé" className="transition-colors">
+                                      {e.paye_coach ? <CheckCircle2 size={13} className="text-blue-400" /> : <Circle size={13} className="text-zinc-600 hover:text-zinc-400" />}
+                                    </button>
                                     <button onClick={() => startEdit(e)} className="text-zinc-600 hover:text-blue-400 transition-colors"><Pencil size={13} /></button>
                                     <button onClick={() => deleteEntry(e.id)} className="text-zinc-600 hover:text-red-400 transition-colors"><X size={13} /></button>
                                   </div>
