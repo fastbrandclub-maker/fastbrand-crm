@@ -8,6 +8,7 @@ import {
   LogOut,
   Zap,
   Receipt,
+  TrendingUp,
   Megaphone,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -23,7 +24,8 @@ const nav = [
 
 const adminNav = [
   { to: '/admin/compta', icon: Receipt, label: 'Comptabilité' },
-  { to: '/admin/sales', icon: Megaphone, label: 'Sales & Contenu' },
+  { to: '/admin/sales', icon: TrendingUp, label: 'Sales' },
+  { to: '/admin/contenu', icon: Megaphone, label: 'Contenu' },
 ]
 
 export default function Sidebar({ onClose }) {

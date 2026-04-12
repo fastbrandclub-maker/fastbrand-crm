@@ -10,6 +10,7 @@ import Calendar from './pages/Calendar'
 import Resources from './pages/Resources'
 import Compta from './pages/admin/Compta'
 import Sales from './pages/admin/Sales'
+import Contenu from './pages/admin/Contenu'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="resources" element={<Resources />} />
         <Route path="admin/compta" element={<Compta />} />
         <Route path="admin/sales" element={<Sales />} />
+        <Route path="admin/contenu" element={<Contenu />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

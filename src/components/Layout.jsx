@@ -24,9 +24,9 @@ export default function Layout() {
       </div>
 
       {/* Main */}
-      <main className="flex-1 overflow-auto min-w-0">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-brand-border bg-brand-surface sticky top-0 z-30">
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-brand-border bg-brand-surface shrink-0 z-30">
           <button
             onClick={() => setSidebarOpen(true)}
             className="w-8 h-8 flex items-center justify-center rounded-md text-zinc-400 hover:text-white"
@@ -35,7 +35,9 @@ export default function Layout() {
           </button>
           <span className="text-sm font-bold text-white">FastBrand Club</span>
         </div>
-        <Outlet />
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   )
