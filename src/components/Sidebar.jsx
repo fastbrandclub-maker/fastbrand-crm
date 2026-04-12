@@ -7,6 +7,8 @@ import {
   BookOpen,
   LogOut,
   Zap,
+  Receipt,
+  Megaphone,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ROLES } from '../lib/constants'
@@ -19,8 +21,13 @@ const nav = [
   { to: '/resources', icon: BookOpen, label: 'Ressources' },
 ]
 
+const adminNav = [
+  { to: '/admin/compta', icon: Receipt, label: 'Comptabilité' },
+  { to: '/admin/sales', icon: Megaphone, label: 'Sales & Contenu' },
+]
+
 export default function Sidebar({ onClose }) {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, isAdmin } = useAuth()
   const navigate = useNavigate()
 
   async function handleSignOut() {
@@ -44,7 +51,7 @@ export default function Sidebar({ onClose }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {nav.map(({ to, icon: Icon, label, end }) => (
           <NavLink
             key={to}
@@ -63,6 +70,32 @@ export default function Sidebar({ onClose }) {
             {label}
           </NavLink>
         ))}
+
+        {/* Section Admin */}
+        {isAdmin && (
+          <div className="pt-3 mt-2 border-t border-brand-border">
+            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+              Admin
+            </p>
+            {adminNav.map(({ to, icon: Icon, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-brand-red text-white'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                  }`
+                }
+              >
+                <Icon size={16} />
+                {label}
+              </NavLink>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* User info + logout */}

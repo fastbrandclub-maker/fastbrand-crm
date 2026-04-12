@@ -8,6 +8,8 @@ import StudentDetail from './pages/StudentDetail'
 import Kanban from './pages/Kanban'
 import Calendar from './pages/Calendar'
 import Resources from './pages/Resources'
+import Compta from './pages/admin/Compta'
+import Sales from './pages/admin/Sales'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -53,6 +55,8 @@ export default function App() {
         <Route path="kanban" element={<Kanban />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="resources" element={<Resources />} />
+        <Route path="admin/compta" element={<Compta />} />
+        <Route path="admin/sales" element={<Sales />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

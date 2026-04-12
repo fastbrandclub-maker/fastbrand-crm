@@ -230,15 +230,17 @@ export default function StudentDetail() {
             <p className="text-xs text-zinc-500">Calls effectués</p>
             <p className="text-sm text-white font-medium">{calls.length}</p>
           </div>
-          <div>
-            <p className="text-xs text-zinc-500">Montant</p>
-            <p className="text-sm text-white font-medium">
-              {student.montant_collecte ?? 0}€
-              {student.montant_restant > 0 && (
-                <span className="text-amber-400 text-xs ml-1">({student.montant_restant}€ restants)</span>
-              )}
-            </p>
-          </div>
+          {isAdmin && (
+            <div>
+              <p className="text-xs text-zinc-500">Montant</p>
+              <p className="text-sm text-white font-medium">
+                {student.montant_collecte ?? 0}€
+                {student.montant_restant > 0 && (
+                  <span className="text-amber-400 text-xs ml-1">({student.montant_restant}€ restants)</span>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Offre + Timer */}

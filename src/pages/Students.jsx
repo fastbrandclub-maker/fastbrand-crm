@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, Bell } from 'lucide-react'
-import { OfferTimer } from '../components/students/OfferTimer'
+import { OfferTimer, getEndDate } from '../components/students/OfferTimer'
 
 const RONALDO_PHONE = '33641016134'
 
@@ -35,6 +35,8 @@ export default function Students() {
   const { profile, isAdmin, isCoach, isReadOnly } = useAuth()
   const [students, setStudents] = useState([])
   const [search, setSearch] = useState('')
+  const [filterOffre, setFilterOffre] = useState('all')
+  const [filterStatus, setFilterStatus] = useState('all')
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
 
@@ -79,13 +81,21 @@ export default function Students() {
   }
 
   const filtered = students.filter(s => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      s.first_name?.toLowerCase().includes(q) ||
-      s.last_name?.toLowerCase().includes(q) ||
-      s.email?.toLowerCase().includes(q)
-    )
+    if (search) {
+      const q = search.toLowerCase()
+      const match = s.first_name?.toLowerCase().includes(q) ||
+        s.last_name?.toLowerCase().includes(q) ||
+        s.email?.toLowerCase().includes(q)
+      if (!match) return false
+    }
+    if (filterOffre !== 'all' && s.offre !== filterOffre) return false
+    if (filterStatus === 'blocked' && !s.student_steps?.some(st => st.status === 'blocked')) return false
+    if (filterStatus === 'inactive' && differenceInDays(new Date(), new Date(s.last_updated_at)) < INACTIVITY_DAYS) return false
+    if (filterStatus === 'expired') {
+      const end = getEndDate(s.offre, s.start_date)
+      if (!end || differenceInDays(new Date(), end) < 0) return false
+    }
+    return true
   })
 
   return (
@@ -104,15 +114,60 @@ export default function Students() {
         )}
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Rechercher un élève..."
-          className="w-full bg-brand-surface border border-brand-border rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
-        />
+      {/* Search + Filtres */}
+      <div className="space-y-2 mb-4">
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher un élève..."
+            className="w-full bg-brand-surface border border-brand-border rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+          />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Filtre offre */}
+          {[
+            { value: 'all', label: 'Toutes les offres' },
+            { value: '70_jours', label: '60 Jours' },
+            { value: '6_mois', label: '6 Mois' },
+            { value: '12_mois', label: '12 Mois' },
+            { value: 'resultats', label: 'Résultats' },
+            { value: 'indetermine', label: 'Indéterminé' },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setFilterOffre(opt.value)}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                filterOffre === opt.value
+                  ? 'bg-brand-red text-white'
+                  : 'bg-brand-surface border border-brand-border text-zinc-400 hover:text-white'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          <div className="w-px h-4 bg-brand-border mx-1" />
+          {/* Filtre statut */}
+          {[
+            { value: 'all', label: 'Tous' },
+            { value: 'blocked', label: '🔴 Bloqués' },
+            { value: 'inactive', label: '🟡 Inactifs' },
+            { value: 'expired', label: '⏰ Expirés' },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setFilterStatus(opt.value)}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                filterStatus === opt.value
+                  ? 'bg-zinc-700 text-white'
+                  : 'bg-brand-surface border border-brand-border text-zinc-400 hover:text-white'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* List */}
