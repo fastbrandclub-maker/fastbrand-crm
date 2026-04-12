@@ -173,7 +173,7 @@ export default function Students() {
                       {student.offre && (
                         <OfferTimer offre={student.offre} startDate={student.start_date} compact />
                       )}
-                      {student.montant_restant > 0 && (
+                      {student.montant_restant > 0 && isAdmin && (
                         <span className="text-xs text-amber-400 font-medium shrink-0">
                           {student.montant_restant}€ restants
                         </span>

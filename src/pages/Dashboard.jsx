@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, AlertTriangle, Clock, CheckCircle, ArrowRight, Phone, MessageSquare, CalendarDays, ShieldAlert } from 'lucide-react'
+import { Users, AlertTriangle, Clock, CheckCircle, ArrowRight, Phone, MessageSquare, CalendarDays, ShieldAlert, Timer } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { STEPS, INACTIVITY_DAYS, TEAM } from '../lib/constants'
 import { formatDistanceToNow, differenceInDays, format, isThisWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { getEndDate, OfferBadge } from '../components/students/OfferTimer'
 
 function StatCard({ icon: Icon, label, value, color = 'text-white' }) {
   return (
@@ -89,6 +90,10 @@ export default function Dashboard() {
   const inactiveStudents = students.filter(s => isInactive(s) && !hasBlocked(s))
   const litigeStudents = students.filter(s => s.has_litige)
   const callsThisWeek = calls.filter(c => isThisWeek(new Date(c.call_date), { weekStartsOn: 1 }))
+  const expiredStudents = students.filter(s => {
+    const end = getEndDate(s.offre, s.start_date)
+    return end && differenceInDays(new Date(), end) >= 0
+  })
 
   function sendLitigeWA(student) {
     const lilian = TEAM.find(m => m.name === 'Lilian')
@@ -135,6 +140,35 @@ export default function Dashboard() {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Accompagnements expirés */}
+      {expiredStudents.length > 0 && (
+        <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Timer size={14} className="text-brand-red" />
+            <p className="text-sm font-bold text-brand-red">Accompagnements expirés ({expiredStudents.length})</p>
+          </div>
+          <div className="space-y-2">
+            {expiredStudents.map(s => {
+              const end = getEndDate(s.offre, s.start_date)
+              const daysAgo = differenceInDays(new Date(), end)
+              return (
+                <Link key={s.id} to={`/students/${s.id}`} className="flex items-center justify-between group">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <OfferBadge offre={s.offre} />
+                    <p className="text-sm font-medium text-white group-hover:text-brand-red transition-colors truncate">
+                      {s.first_name} {s.last_name}
+                    </p>
+                  </div>
+                  <span className="text-xs text-red-400 shrink-0 ml-2">
+                    expiré depuis {daysAgo}j
+                  </span>
+                </Link>
+              )
+            })}
           </div>
         </div>
       )}
