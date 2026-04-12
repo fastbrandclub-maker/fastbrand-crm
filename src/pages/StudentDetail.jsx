@@ -166,7 +166,7 @@ export default function StudentDetail() {
   const progress = getProgress()
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 lg:p-6 max-w-5xl mx-auto">
       {/* Back */}
       <Link
         to="/students"
@@ -178,40 +178,38 @@ export default function StudentDetail() {
 
       {/* Student header */}
       <div className="bg-brand-surface border border-brand-border rounded-xl p-5 mb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-brand-red/20 flex items-center justify-center shrink-0">
-              <span className="text-xl font-bold text-brand-red">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-brand-red/20 flex items-center justify-center shrink-0">
+              <span className="text-lg lg:text-xl font-bold text-brand-red">
                 {student.first_name[0]}{student.last_name[0]}
               </span>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">
+              <h1 className="text-base lg:text-lg font-bold text-white">
                 {student.first_name} {student.last_name}
               </h1>
-              <p className="text-sm text-zinc-500">{student.email}</p>
+              <p className="text-sm text-zinc-500 truncate max-w-[200px] sm:max-w-none">{student.email}</p>
               {student.phone && (
                 <p className="text-sm text-zinc-500">{student.phone}</p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {isCoach && (
+          {isCoach && (
+            <div className="flex items-center gap-2">
               <Button variant="secondary" size="sm" onClick={() => setShowEditStudent(true)}>
                 <Edit size={13} />
-                Modifier
+                <span className="hidden sm:inline">Modifier</span>
               </Button>
-            )}
-            {isCoach && (
               <Button
                 size="sm"
                 variant={student.has_litige ? 'danger' : 'secondary'}
                 onClick={() => student.has_litige ? handleLitige() : setShowLitige(true)}
               >
-                {student.has_litige ? <><ShieldCheck size={13} /> Résoudre litige</> : <><ShieldAlert size={13} /> Signaler litige</>}
+                {student.has_litige ? <><ShieldCheck size={13} /><span className="hidden sm:inline"> Résoudre</span></> : <><ShieldAlert size={13} /><span className="hidden sm:inline"> Litige</span></>}
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Meta */}
@@ -357,7 +355,7 @@ export default function StudentDetail() {
                       {isCoach && (
                         <button
                           onClick={() => handleDeleteCall(call.id)}
-                          className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 transition-all"
+                          className="text-zinc-600 hover:text-red-400 transition-all opacity-50 sm:opacity-0 sm:group-hover:opacity-100"
                         >
                           <Trash2 size={12} />
                         </button>
@@ -405,7 +403,7 @@ export default function StudentDetail() {
                       {(isAdmin || note.author_id === profile?.id) && (
                         <button
                           onClick={() => handleDeleteNote(note.id)}
-                          className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 transition-all"
+                          className="text-zinc-600 hover:text-red-400 transition-all opacity-50 sm:opacity-0 sm:group-hover:opacity-100"
                         >
                           <Trash2 size={11} />
                         </button>

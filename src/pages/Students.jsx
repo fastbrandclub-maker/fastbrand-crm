@@ -102,9 +102,9 @@ export default function Students() {
   })
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 lg:p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 lg:mb-6">
         <div>
           <h1 className="text-xl font-bold text-white">Élèves</h1>
           <p className="text-sm text-zinc-500 mt-0.5">{students.length} élève{students.length > 1 ? 's' : ''} au total</p>
@@ -112,7 +112,8 @@ export default function Students() {
         {isCoach && (
           <Button onClick={() => setShowForm(true)}>
             <Plus size={15} />
-            Nouvel élève
+            <span className="hidden sm:inline">Nouvel élève</span>
+            <span className="sm:hidden">Ajouter</span>
           </Button>
         )}
       </div>
@@ -128,48 +129,62 @@ export default function Students() {
             className="w-full bg-brand-surface border border-brand-border rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
           />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Filtre offre */}
-          {[
-            { value: 'all', label: 'Toutes les offres' },
-            { value: '70_jours', label: '60 Jours' },
-            { value: '6_mois', label: '6 Mois' },
-            { value: '12_mois', label: '12 Mois' },
-            { value: 'resultats', label: 'Résultats' },
-            { value: 'indetermine', label: 'Indéterminé' },
-          ].map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setFilterOffre(opt.value)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                filterOffre === opt.value
-                  ? 'bg-brand-red text-white'
-                  : 'bg-brand-surface border border-brand-border text-zinc-400 hover:text-white'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-          <div className="w-px h-4 bg-brand-border mx-1" />
-          {/* Filtre statut */}
-          {[
-            { value: 'all', label: 'Tous' },
-            { value: 'blocked', label: '🔴 Bloqués' },
-            { value: 'inactive', label: '🟡 Inactifs' },
-            { value: 'expired', label: '⏰ Expirés' },
-          ].map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setFilterStatus(opt.value)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                filterStatus === opt.value
-                  ? 'bg-zinc-700 text-white'
-                  : 'bg-brand-surface border border-brand-border text-zinc-400 hover:text-white'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="flex gap-2 flex-wrap">
+          {/* Filtre offre — select sur mobile */}
+          <select
+            value={filterOffre}
+            onChange={e => setFilterOffre(e.target.value)}
+            className="sm:hidden bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none flex-1"
+          >
+            {[
+              { value: 'all', label: 'Toutes les offres' },
+              { value: '70_jours', label: '60 Jours' },
+              { value: '6_mois', label: '6 Mois' },
+              { value: '12_mois', label: '12 Mois' },
+              { value: 'resultats', label: 'Résultats' },
+              { value: 'indetermine', label: 'Indéterminé' },
+            ].map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          </select>
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            className="sm:hidden bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none flex-1"
+          >
+            {[
+              { value: 'all', label: 'Tous les statuts' },
+              { value: 'blocked', label: 'Bloqués' },
+              { value: 'inactive', label: 'Inactifs' },
+              { value: 'expired', label: 'Expirés' },
+            ].map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          </select>
+          {/* Filtres boutons — desktop uniquement */}
+          <div className="hidden sm:flex items-center gap-2 flex-wrap">
+            {[
+              { value: 'all', label: 'Toutes les offres' },
+              { value: '70_jours', label: '60 Jours' },
+              { value: '6_mois', label: '6 Mois' },
+              { value: '12_mois', label: '12 Mois' },
+              { value: 'resultats', label: 'Résultats' },
+              { value: 'indetermine', label: 'Indéterminé' },
+            ].map(opt => (
+              <button key={opt.value} onClick={() => setFilterOffre(opt.value)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${filterOffre === opt.value ? 'bg-brand-red text-white' : 'bg-brand-surface border border-brand-border text-zinc-400 hover:text-white'}`}>
+                {opt.label}
+              </button>
+            ))}
+            <div className="w-px h-4 bg-brand-border mx-1" />
+            {[
+              { value: 'all', label: 'Tous' },
+              { value: 'blocked', label: '🔴 Bloqués' },
+              { value: 'inactive', label: '🟡 Inactifs' },
+              { value: 'expired', label: '⏰ Expirés' },
+            ].map(opt => (
+              <button key={opt.value} onClick={() => setFilterStatus(opt.value)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${filterStatus === opt.value ? 'bg-zinc-700 text-white' : 'bg-brand-surface border border-brand-border text-zinc-400 hover:text-white'}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -245,17 +260,13 @@ export default function Students() {
                   </div>
 
                   {/* Progress + actions */}
-                  <div className="hidden sm:flex items-center gap-3 shrink-0">
-                    <div className="w-28">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="hidden sm:block w-24">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-zinc-500">Progression</span>
-                        <span className="text-xs font-medium text-zinc-300">{progress}%</span>
+                        <span className="text-xs text-zinc-500">{progress}%</span>
                       </div>
                       <div className="h-1.5 bg-brand-border rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-brand-red rounded-full transition-all"
-                          style={{ width: `${progress}%` }}
-                        />
+                        <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
                       </div>
                     </div>
                     <RelanceButton firstName={student.first_name} />

@@ -146,20 +146,20 @@ export default function Dashboard() {
           </div>
           <div className="space-y-2">
             {litigeStudents.map(s => (
-              <div key={s.id} className="flex items-center justify-between gap-2">
-                <Link to={`/students/${s.id}`} className="text-sm font-medium text-white hover:text-brand-red transition-colors min-w-0 truncate">
-                  {s.first_name} {s.last_name}
+              <div key={s.id} className="flex items-start justify-between gap-2">
+                <Link to={`/students/${s.id}`} className="text-sm font-medium text-white hover:text-brand-red transition-colors min-w-0">
+                  <p className="truncate">{s.first_name} {s.last_name}</p>
                   {s.litige_description && (
-                    <span className="text-xs text-zinc-400 font-normal ml-2">— {s.litige_description}</span>
+                    <p className="text-xs text-zinc-400 font-normal truncate">{s.litige_description}</p>
                   )}
                 </Link>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button onClick={() => sendLitigeWA(s)} className="text-xs text-brand-red hover:underline flex items-center gap-1">
-                    <Phone size={10} /> Notifier
+                    <Phone size={10} /> <span className="hidden sm:inline">Notifier</span>
                   </button>
                   <button
                     onClick={() => resolveLitige(s)}
-                    className="text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-md transition-colors"
+                    className="text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-md transition-colors whitespace-nowrap"
                   >
                     C'est géré
                   </button>
@@ -183,17 +183,17 @@ export default function Dashboard() {
               const daysAgo = differenceInDays(new Date(), end)
               return (
                 <div key={s.id} className="flex items-center justify-between gap-2">
-                  <Link to={`/students/${s.id}`} className="flex items-center gap-2 min-w-0 group">
+                  <Link to={`/students/${s.id}`} className="flex items-center gap-2 min-w-0 group flex-1">
                     <OfferBadge offre={s.offre} />
                     <p className="text-sm font-medium text-white group-hover:text-brand-red transition-colors truncate">
                       {s.first_name} {s.last_name}
                     </p>
                   </Link>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-red-400">expiré depuis {daysAgo}j</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs text-red-400 hidden sm:inline">{daysAgo}j</span>
                     <button
                       onClick={() => dismissExpired(s.id)}
-                      className="text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-md transition-colors"
+                      className="text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-md transition-colors whitespace-nowrap"
                     >
                       C'est géré
                     </button>

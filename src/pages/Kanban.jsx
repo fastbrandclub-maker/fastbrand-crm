@@ -123,7 +123,7 @@ export default function Kanban() {
   const completed = students.filter(s => getCurrentStep(s.student_steps) === 10)
 
   return (
-    <div className="p-6 h-full">
+    <div className="p-4 lg:p-6 h-full">
       {/* Header */}
       <div className="mb-5">
         <h1 className="text-xl font-bold text-white">Kanban</h1>

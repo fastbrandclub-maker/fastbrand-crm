@@ -182,19 +182,19 @@ export default function Compta() {
   )
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 lg:p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 lg:mb-5 gap-3">
         <div>
           <h1 className="text-xl font-bold text-white">Comptabilité</h1>
           <p className="text-sm text-zinc-500 mt-0.5">{entries.length} clients — accès admin uniquement</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" onClick={() => { setShowFraisForm(true); setShowClientForm(false) }}>
-            <Receipt size={14} /> Ajouter des frais
+            <Receipt size={14} /> <span className="hidden sm:inline">Ajouter des frais</span><span className="sm:hidden">Frais</span>
           </Button>
           <Button onClick={() => { setEditingEntry(null); setClientForm(emptyClientForm); setShowClientForm(true); setShowFraisForm(false) }}>
-            <Plus size={15} /> Ajouter un client
+            <Plus size={15} /> <span className="hidden sm:inline">Ajouter un client</span><span className="sm:hidden">Client</span>
           </Button>
         </div>
       </div>
@@ -214,7 +214,7 @@ export default function Compta() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-7 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-5">
         {[
           { label: 'Collecté', value: fmt(totalCollecte), color: 'text-emerald-400' },
           { label: 'Restant dû', value: fmt(totalRestant), color: totalRestant > 0 ? 'text-amber-400' : 'text-zinc-400' },
@@ -395,14 +395,14 @@ export default function Compta() {
                 onClick={() => setCollapsed(c => ({ ...c, [monthKey]: !c[monthKey] }))}
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 min-w-0">
                   <p className="text-sm font-bold text-white capitalize">{monthKey}</p>
-                  <span className="text-xs text-zinc-500">{monthEntries.length} client{monthEntries.length > 1 ? 's' : ''}</span>
-                  {monthRestant > 0 && <span className="text-xs text-amber-400">{fmt(monthRestant)} en attente</span>}
+                  <span className="text-xs text-zinc-500 hidden sm:inline">{monthEntries.length} client{monthEntries.length > 1 ? 's' : ''}</span>
+                  {monthRestant > 0 && <span className="text-xs text-amber-400 hidden sm:inline">{fmt(monthRestant)} att.</span>}
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-zinc-500">{fmt(monthCollecte)} collecté</span>
-                  {monthFraisTotal > 0 && <span className="text-xs text-red-400">−{fmt(monthFraisTotal)} frais</span>}
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                  <span className="text-xs text-zinc-500 hidden sm:inline">{fmt(monthCollecte)} collecté</span>
+                  {monthFraisTotal > 0 && <span className="text-xs text-red-400 hidden sm:inline">−{fmt(monthFraisTotal)}</span>}
                   <span className="text-sm font-bold text-emerald-400">{fmt(monthNet - monthFraisTotal)} net</span>
                   {isCollapsed ? <ChevronDown size={14} className="text-zinc-500" /> : <ChevronUp size={14} className="text-zinc-500" />}
                 </div>
