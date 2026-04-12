@@ -50,14 +50,19 @@ export default function Compta() {
   })
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('compta_entries').select('*').order('date_paiement', { ascending: true, nullsFirst: false }),
-      supabase.from('compta_frais').select('*, profiles:author_id(full_name)').order('date_frais', { ascending: true }),
-    ]).then(([e, f]) => {
-      setEntries(e.data ?? [])
-      setFrais(f.data ?? [])
-      setLoading(false)
-    })
+    function loadAll() {
+      Promise.all([
+        supabase.from('compta_entries').select('*').order('date_paiement', { ascending: true, nullsFirst: false }),
+        supabase.from('compta_frais').select('*, profiles:author_id(full_name)').order('date_frais', { ascending: true }),
+      ]).then(([e, f]) => {
+        setEntries(e.data ?? [])
+        setFrais(f.data ?? [])
+        setLoading(false)
+      })
+    }
+    loadAll()
+    const interval = setInterval(loadAll, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   function setC(k, v) { setClientForm(f => ({ ...f, [k]: v })) }

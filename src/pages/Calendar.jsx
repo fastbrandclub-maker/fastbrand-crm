@@ -44,7 +44,11 @@ export default function Calendar() {
     setLoading(false)
   }
 
-  useEffect(() => { loadEvents() }, [])
+  useEffect(() => {
+    loadEvents()
+    const interval = setInterval(loadEvents, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   function getDayEvents(day) {
     return events.filter(e => isSameDay(new Date(e.event_date), day))

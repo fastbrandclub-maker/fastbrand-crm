@@ -22,15 +22,20 @@ export default function Contenu() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    supabase
-      .from('admin_notes')
-      .select('*, profiles:author_id(full_name)')
-      .eq('type', 'contenu')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setNotes(data ?? [])
-        setLoading(false)
-      })
+    function loadNotes() {
+      supabase
+        .from('admin_notes')
+        .select('*, profiles:author_id(full_name)')
+        .eq('type', 'contenu')
+        .order('created_at', { ascending: false })
+        .then(({ data }) => {
+          setNotes(data ?? [])
+          setLoading(false)
+        })
+    }
+    loadNotes()
+    const interval = setInterval(loadNotes, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   async function handleAdd(e) {

@@ -99,6 +99,8 @@ export default function StudentDetail() {
 
   useEffect(() => {
     loadData()
+    const interval = setInterval(loadData, 30000)
+    return () => clearInterval(interval)
   }, [id])
 
   function handleStepUpdate(updated) {

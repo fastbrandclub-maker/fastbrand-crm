@@ -47,6 +47,8 @@ export default function Resources() {
 
   useEffect(() => {
     loadResources()
+    const interval = setInterval(loadResources, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   async function handleAdd(e) {

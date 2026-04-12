@@ -99,7 +99,10 @@ export default function Kanban() {
       setStudents(data ?? [])
       setLoading(false)
     }
-    if (profile) load()
+    if (!profile) return
+    load()
+    const interval = setInterval(load, 30000)
+    return () => clearInterval(interval)
   }, [profile, isAdmin])
 
   function getCurrentStep(steps) {
