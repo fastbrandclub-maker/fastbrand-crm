@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, Bell } from 'lucide-react'
+import { OfferTimer } from '../components/students/OfferTimer'
 
 const RONALDO_PHONE = '33641016134'
 
@@ -165,10 +166,18 @@ export default function Students() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5">
+                    <div className="flex items-center gap-3 mt-1 flex-wrap">
                       <p className="text-xs text-zinc-500 truncate">
                         Étape {currentStep}/9 — {stepName}
                       </p>
+                      {student.offre && (
+                        <OfferTimer offre={student.offre} startDate={student.start_date} compact />
+                      )}
+                      {student.montant_restant > 0 && (
+                        <span className="text-xs text-amber-400 font-medium shrink-0">
+                          {student.montant_restant}€ restants
+                        </span>
+                      )}
                       {student.profiles?.full_name && isAdmin && (
                         <p className="text-xs text-zinc-600 shrink-0">
                           Coach : {student.profiles.full_name}

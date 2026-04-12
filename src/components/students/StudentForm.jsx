@@ -15,6 +15,9 @@ export default function StudentForm({ student, onSave, onCancel }) {
     last_name: student?.last_name ?? '',
     email: student?.email ?? '',
     start_date: student?.start_date ?? new Date().toISOString().slice(0, 10),
+    offre: student?.offre ?? 'indetermine',
+    montant_collecte: student?.montant_collecte ?? '',
+    montant_restant: student?.montant_restant ?? '',
     coach_id: student?.coach_id ?? profile?.id ?? '',
     general_notes: student?.general_notes ?? '',
     project_url: student?.project_url ?? '',
@@ -82,6 +85,38 @@ export default function StudentForm({ student, onSave, onCancel }) {
         onChange={e => set('email', e.target.value)}
         placeholder="email@exemple.com (facultatif)"
       />
+
+      <div className="grid grid-cols-2 gap-3">
+        <Select
+          label="Offre"
+          value={form.offre}
+          onChange={e => set('offre', e.target.value)}
+        >
+          <option value="70_jours">60 Jours (70j)</option>
+          <option value="6_mois">6 Mois</option>
+          <option value="12_mois">12 Mois</option>
+          <option value="resultats">Résultats</option>
+          <option value="indetermine">Indéterminé</option>
+        </Select>
+        <div />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          label="Montant collecté (€)"
+          type="number"
+          value={form.montant_collecte}
+          onChange={e => set('montant_collecte', e.target.value)}
+          placeholder="2500"
+        />
+        <Input
+          label="Montant restant (€)"
+          type="number"
+          value={form.montant_restant}
+          onChange={e => set('montant_restant', e.target.value)}
+          placeholder="0"
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Input

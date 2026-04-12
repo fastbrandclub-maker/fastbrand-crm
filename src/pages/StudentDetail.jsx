@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext'
 import { STEPS, TEAM } from '../lib/constants'
 import StepCard from '../components/students/StepCard'
 import CallForm from '../components/students/CallForm'
+import { OfferTimer } from '../components/students/OfferTimer'
 import StudentForm from '../components/students/StudentForm'
 import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
@@ -230,13 +231,31 @@ export default function StudentDetail() {
             <p className="text-sm text-white font-medium">{calls.length}</p>
           </div>
           <div>
-            <p className="text-xs text-zinc-500">Progression</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <div className="flex-1 h-1.5 bg-brand-border rounded-full overflow-hidden">
-                <div className="h-full bg-brand-red rounded-full" style={{ width: `${progress}%` }} />
-              </div>
-              <span className="text-xs font-medium text-white">{progress}%</span>
-            </div>
+            <p className="text-xs text-zinc-500">Montant</p>
+            <p className="text-sm text-white font-medium">
+              {student.montant_collecte ?? 0}€
+              {student.montant_restant > 0 && (
+                <span className="text-amber-400 text-xs ml-1">({student.montant_restant}€ restants)</span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Offre + Timer */}
+        {student.offre && (
+          <div className="mt-4 pt-4 border-t border-brand-border">
+            <OfferTimer offre={student.offre} startDate={student.start_date} />
+          </div>
+        )}
+
+        {/* Progress */}
+        <div className="mt-3 pt-3 border-t border-brand-border">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-zinc-500">Progression du programme</p>
+            <span className="text-xs font-medium text-white">{progress}%</span>
+          </div>
+          <div className="h-1.5 bg-brand-border rounded-full overflow-hidden">
+            <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
           </div>
         </div>
 
