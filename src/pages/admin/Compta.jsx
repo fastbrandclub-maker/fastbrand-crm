@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { differenceInDays, addDays, addMonths, format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { AlertTriangle, Clock, Plus, TrendingUp, Wallet, X, Receipt, ChevronDown, ChevronUp, Pencil, CheckCircle2, Circle } from 'lucide-react'
+import { AlertTriangle, Clock, Plus, TrendingUp, Wallet, X, Receipt, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import Button from '../../components/ui/Button'
 
 function getExpiryDate(offre, datePaiement) {
@@ -41,11 +41,10 @@ export default function Compta() {
   const [saving, setSaving] = useState(false)
 
   const emptyClientForm = {
-    client_name: '', closer: '', offre: '6_mois', prix: '',
+    client_name: '', closer: '', coach: '', offre: '6_mois', prix: '',
     date_paiement: new Date().toISOString().slice(0, 10),
-    paiement_recu: '', restant_du: 0, frais_closer: '', net_apres_frais: '',
+    paiement_recu: '', restant_du: 0, frais_closer: '', frais_coach: '', net_apres_frais: '',
     moyen_paiement: '', cta_group: '3ème CTA',
-    paye_closer: false, paye_coach: false,
   }
   const [clientForm, setClientForm] = useState(emptyClientForm)
   const [fraisForm, setFraisForm] = useState({
@@ -90,26 +89,21 @@ export default function Compta() {
     }
   }
 
-  async function togglePaye(id, field, current) {
-    const { data } = await supabase.from('compta_entries').update({ [field]: !current }).eq('id', id).select().single()
-    if (data) setEntries(prev => prev.map(e => e.id === id ? data : e))
-  }
-
   function startEdit(entry) {
     setClientForm({
       client_name: entry.client_name ?? '',
       closer: entry.closer ?? '',
+      coach: entry.coach ?? '',
       offre: entry.offre ?? '6_mois',
       prix: entry.prix ?? '',
       date_paiement: entry.date_paiement ?? new Date().toISOString().slice(0, 10),
       paiement_recu: entry.paiement_recu ?? '',
       restant_du: entry.restant_du ?? 0,
       frais_closer: entry.frais_closer ?? '',
+      frais_coach: entry.frais_coach ?? '',
       net_apres_frais: entry.net_apres_frais ?? '',
       moyen_paiement: entry.moyen_paiement ?? '',
       cta_group: entry.cta_group ?? '3ème CTA',
-      paye_closer: entry.paye_closer ?? false,
-      paye_coach: entry.paye_coach ?? false,
     })
     setEditingEntry(entry.id)
     setShowClientForm(true)
@@ -150,8 +144,8 @@ export default function Compta() {
   const totalNet = filteredEntries.reduce((s, e) => s + (Number(e.net_apres_frais) || 0), 0)
   const totalFrais = filteredFrais.reduce((s, f) => s + (Number(f.montant) || 0), 0)
   const netReel = totalNet - totalFrais
-  const payeCloserCount = filteredEntries.filter(e => e.paye_closer).length
-  const payeCoachCount = filteredEntries.filter(e => e.paye_coach).length
+  const totalCommCloser = filteredEntries.reduce((s, e) => s + (Number(e.frais_closer) || 0), 0)
+  const totalCommCoach = filteredEntries.reduce((s, e) => s + (Number(e.frais_coach) || 0), 0)
 
   // Warnings (toujours sur tout)
   const today = new Date()
@@ -224,28 +218,17 @@ export default function Compta() {
         {[
           { label: 'Collecté', value: fmt(totalCollecte), color: 'text-emerald-400' },
           { label: 'Restant dû', value: fmt(totalRestant), color: totalRestant > 0 ? 'text-amber-400' : 'text-zinc-400' },
-          { label: 'Net closers', value: fmt(totalNet), color: 'text-blue-400' },
+          { label: 'Net', value: fmt(totalNet), color: 'text-blue-400' },
           { label: 'Frais', value: fmt(totalFrais), color: totalFrais > 0 ? 'text-red-400' : 'text-zinc-400' },
           { label: 'Net réel', value: fmt(netReel), color: 'text-white' },
+          { label: 'Comm. closer', value: fmt(totalCommCloser), color: 'text-purple-400' },
+          { label: 'Comm. coach', value: fmt(totalCommCoach), color: 'text-cyan-400' },
         ].map(s => (
           <div key={s.label} className="bg-brand-surface border border-brand-border rounded-xl p-4">
             <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-1">{s.label}</p>
             <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
           </div>
         ))}
-        {/* Payés */}
-        <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
-          <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-2">Closer payé</p>
-          <p className={`text-xl font-bold ${payeCloserCount === filteredEntries.length && filteredEntries.length > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-            {payeCloserCount}<span className="text-sm font-normal text-zinc-500">/{filteredEntries.length}</span>
-          </p>
-        </div>
-        <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
-          <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-2">Coach payé</p>
-          <p className={`text-xl font-bold ${payeCoachCount === filteredEntries.length && filteredEntries.length > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-            {payeCoachCount}<span className="text-sm font-normal text-zinc-500">/{filteredEntries.length}</span>
-          </p>
-        </div>
       </div>
 
       {/* Warnings */}
@@ -300,24 +283,28 @@ export default function Compta() {
             <button onClick={() => { setShowClientForm(false); setEditingEntry(null); setClientForm(emptyClientForm) }}><X size={16} className="text-zinc-500 hover:text-white" /></button>
           </div>
           <form onSubmit={handleAddClient} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: 'Client *', key: 'client_name', required: true, span: 2 },
-              { label: 'Closer', key: 'closer', type: 'select', options: ['', 'selim', 'ronie', 'loic', 'theo'] },
-              { label: 'Moyen de paiement', key: 'moyen_paiement' },
-            ].map(field => (
-              <div key={field.key} className={field.span ? `col-span-${field.span} lg:col-span-1` : ''}>
-                <label className="text-xs text-zinc-500 block mb-1">{field.label}</label>
-                {field.type === 'select' ? (
-                  <select value={clientForm[field.key]} onChange={e => setC(field.key, e.target.value)}
-                    className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
-                    {field.options.map(o => <option key={o} value={o}>{o || '—'}</option>)}
-                  </select>
-                ) : (
-                  <input required={field.required} value={clientForm[field.key]} onChange={e => setC(field.key, e.target.value)}
-                    className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
-                )}
-              </div>
-            ))}
+            <div>
+              <label className="text-xs text-zinc-500 block mb-1">Client *</label>
+              <input required value={clientForm.client_name} onChange={e => setC('client_name', e.target.value)}
+                className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 block mb-1">Closer</label>
+              <select value={clientForm.closer} onChange={e => setC('closer', e.target.value)}
+                className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                {['', 'selim', 'ronie', 'loic', 'theo'].map(o => <option key={o} value={o}>{o || '—'}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 block mb-1">Coach</label>
+              <input value={clientForm.coach} onChange={e => setC('coach', e.target.value)}
+                className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 block mb-1">Moyen de paiement</label>
+              <input value={clientForm.moyen_paiement} onChange={e => setC('moyen_paiement', e.target.value)}
+                className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
+            </div>
             <div>
               <label className="text-xs text-zinc-500 block mb-1">Offre</label>
               <select value={clientForm.offre} onChange={e => setC('offre', e.target.value)}
@@ -332,7 +319,8 @@ export default function Compta() {
               { label: 'Date paiement', key: 'date_paiement', type: 'date' },
               { label: 'Reçu (€)', key: 'paiement_recu', type: 'number' },
               { label: 'Restant dû (€)', key: 'restant_du', type: 'number' },
-              { label: 'Frais closer (€)', key: 'frais_closer', type: 'number' },
+              { label: 'Comm. closer (€)', key: 'frais_closer', type: 'number' },
+              { label: 'Comm. coach (€)', key: 'frais_coach', type: 'number' },
               { label: 'Net après frais (€)', key: 'net_apres_frais', type: 'number' },
             ].map(field => (
               <div key={field.key}>
@@ -341,21 +329,9 @@ export default function Compta() {
                   className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
               </div>
             ))}
-            <div className="col-span-2 lg:col-span-4 flex items-center gap-4 pt-1">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={!!clientForm.paye_closer} onChange={e => setC('paye_closer', e.target.checked)}
-                  className="w-4 h-4 accent-emerald-500 cursor-pointer" />
-                <span className="text-xs text-zinc-400">Closer payé</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={!!clientForm.paye_coach} onChange={e => setC('paye_coach', e.target.checked)}
-                  className="w-4 h-4 accent-emerald-500 cursor-pointer" />
-                <span className="text-xs text-zinc-400">Coach payé</span>
-              </label>
-              <div className="ml-auto flex gap-2">
-                <Button variant="secondary" type="button" onClick={() => setShowClientForm(false)}>Annuler</Button>
-                <Button type="submit" disabled={saving}>{saving ? 'Enregistrement...' : editingEntry ? 'Modifier' : 'Ajouter'}</Button>
-              </div>
+            <div className="col-span-2 lg:col-span-4 flex justify-end gap-2 pt-1">
+              <Button variant="secondary" type="button" onClick={() => setShowClientForm(false)}>Annuler</Button>
+              <Button type="submit" disabled={saving}>{saving ? 'Enregistrement...' : editingEntry ? 'Modifier' : 'Ajouter'}</Button>
             </div>
           </form>
         </div>
@@ -440,7 +416,7 @@ export default function Compta() {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b border-brand-border/50">
-                            {['Client', 'Closer', 'Offre', 'Prix', 'Reçu', 'Restant', 'Frais closer', 'Net', 'Paiement', ''].map(h => (
+                            {['Client', 'Closer', 'Coach', 'Offre', 'Prix', 'Reçu', 'Restant', 'Comm. closer', 'Comm. coach', 'Net', 'Paiement', ''].map(h => (
                               <th key={h} className="px-3 py-2 text-left text-zinc-500 font-medium whitespace-nowrap">{h}</th>
                             ))}
                           </tr>
@@ -458,21 +434,17 @@ export default function Compta() {
                                   {hasPending && <span className="ml-1.5 text-amber-400 text-[10px]">💰</span>}
                                 </td>
                                 <td className="px-3 py-2.5 text-zinc-400 capitalize">{e.closer ?? '—'}</td>
+                                <td className="px-3 py-2.5 text-zinc-400 capitalize">{e.coach ?? '—'}</td>
                                 <td className="px-3 py-2.5 text-zinc-300">{offreLabel(e.offre)}</td>
                                 <td className="px-3 py-2.5 text-zinc-300">{fmt(e.prix)}</td>
                                 <td className="px-3 py-2.5 text-emerald-400 font-medium">{fmt(e.paiement_recu)}</td>
                                 <td className={`px-3 py-2.5 font-medium ${hasPending ? 'text-amber-400' : 'text-zinc-500'}`}>{Number(e.restant_du) > 0 ? fmt(e.restant_du) : '—'}</td>
-                                <td className="px-3 py-2.5 text-zinc-400">{fmt(e.frais_closer)}</td>
+                                <td className="px-3 py-2.5 text-purple-400">{fmt(e.frais_closer)}</td>
+                                <td className="px-3 py-2.5 text-cyan-400">{fmt(e.frais_coach)}</td>
                                 <td className="px-3 py-2.5 text-blue-400 font-medium">{fmt(e.net_apres_frais)}</td>
                                 <td className="px-3 py-2.5 text-zinc-500 max-w-[100px] truncate">{e.moyen_paiement ?? '—'}</td>
                                 <td className="px-3 py-2.5">
                                   <div className="flex items-center gap-2">
-                                    <button onClick={() => togglePaye(e.id, 'paye_closer', e.paye_closer)} title="Closer payé" className="transition-colors">
-                                      {e.paye_closer ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Circle size={13} className="text-zinc-600 hover:text-zinc-400" />}
-                                    </button>
-                                    <button onClick={() => togglePaye(e.id, 'paye_coach', e.paye_coach)} title="Coach payé" className="transition-colors">
-                                      {e.paye_coach ? <CheckCircle2 size={13} className="text-blue-400" /> : <Circle size={13} className="text-zinc-600 hover:text-zinc-400" />}
-                                    </button>
                                     <button onClick={() => startEdit(e)} className="text-zinc-600 hover:text-blue-400 transition-colors"><Pencil size={13} /></button>
                                     <button onClick={() => deleteEntry(e.id)} className="text-zinc-600 hover:text-red-400 transition-colors"><X size={13} /></button>
                                   </div>
