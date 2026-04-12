@@ -45,6 +45,7 @@ export default function Compta() {
     date_paiement: new Date().toISOString().slice(0, 10),
     paiement_recu: '', restant_du: 0, frais_closer: '', net_apres_frais: '',
     moyen_paiement: '', cta_group: '3ème CTA',
+    paye_closer: false, paye_coach: false,
   }
   const [clientForm, setClientForm] = useState(emptyClientForm)
   const [fraisForm, setFraisForm] = useState({
@@ -89,6 +90,11 @@ export default function Compta() {
     }
   }
 
+  async function togglePaye(id, field, current) {
+    const { data } = await supabase.from('compta_entries').update({ [field]: !current }).eq('id', id).select().single()
+    if (data) setEntries(prev => prev.map(e => e.id === id ? data : e))
+  }
+
   function startEdit(entry) {
     setClientForm({
       client_name: entry.client_name ?? '',
@@ -102,6 +108,8 @@ export default function Compta() {
       net_apres_frais: entry.net_apres_frais ?? '',
       moyen_paiement: entry.moyen_paiement ?? '',
       cta_group: entry.cta_group ?? '3ème CTA',
+      paye_closer: entry.paye_closer ?? false,
+      paye_coach: entry.paye_coach ?? false,
     })
     setEditingEntry(entry.id)
     setShowClientForm(true)
@@ -318,9 +326,21 @@ export default function Compta() {
                   className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
               </div>
             ))}
-            <div className="col-span-2 lg:col-span-4 flex justify-end gap-2 pt-1">
-              <Button variant="secondary" type="button" onClick={() => setShowClientForm(false)}>Annuler</Button>
-              <Button type="submit" disabled={saving}>{saving ? 'Enregistrement...' : 'Ajouter'}</Button>
+            <div className="col-span-2 lg:col-span-4 flex items-center gap-4 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={!!clientForm.paye_closer} onChange={e => setC('paye_closer', e.target.checked)}
+                  className="w-4 h-4 accent-emerald-500 cursor-pointer" />
+                <span className="text-xs text-zinc-400">Closer payé</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={!!clientForm.paye_coach} onChange={e => setC('paye_coach', e.target.checked)}
+                  className="w-4 h-4 accent-emerald-500 cursor-pointer" />
+                <span className="text-xs text-zinc-400">Coach payé</span>
+              </label>
+              <div className="ml-auto flex gap-2">
+                <Button variant="secondary" type="button" onClick={() => setShowClientForm(false)}>Annuler</Button>
+                <Button type="submit" disabled={saving}>{saving ? 'Enregistrement...' : editingEntry ? 'Modifier' : 'Ajouter'}</Button>
+              </div>
             </div>
           </form>
         </div>
@@ -405,7 +425,7 @@ export default function Compta() {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b border-brand-border/50">
-                            {['Client', 'Closer', 'Offre', 'Prix', 'Reçu', 'Restant', 'Frais closer', 'Net', 'Paiement', ''].map(h => (
+                            {['Client', 'Closer', 'Offre', 'Prix', 'Reçu', 'Restant', 'Frais closer', 'Net', 'Paiement', 'Payé', ''].map(h => (
                               <th key={h} className="px-3 py-2 text-left text-zinc-500 font-medium whitespace-nowrap">{h}</th>
                             ))}
                           </tr>
@@ -430,6 +450,24 @@ export default function Compta() {
                                 <td className="px-3 py-2.5 text-zinc-400">{fmt(e.frais_closer)}</td>
                                 <td className="px-3 py-2.5 text-blue-400 font-medium">{fmt(e.net_apres_frais)}</td>
                                 <td className="px-3 py-2.5 text-zinc-500 max-w-[100px] truncate">{e.moyen_paiement ?? '—'}</td>
+                                <td className="px-3 py-2.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      onClick={() => togglePaye(e.id, 'paye_closer', e.paye_closer)}
+                                      title="Closer payé"
+                                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors ${e.paye_closer ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+                                    >
+                                      closer
+                                    </button>
+                                    <button
+                                      onClick={() => togglePaye(e.id, 'paye_coach', e.paye_coach)}
+                                      title="Coach payé"
+                                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors ${e.paye_coach ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
+                                    >
+                                      coach
+                                    </button>
+                                  </div>
+                                </td>
                                 <td className="px-3 py-2.5">
                                   <div className="flex items-center gap-2">
                                     <button onClick={() => startEdit(e)} className="text-zinc-600 hover:text-blue-400 transition-colors"><Pencil size={13} /></button>
