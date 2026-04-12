@@ -33,7 +33,7 @@ export default function Compta() {
   const [entries, setEntries] = useState([])
   const [frais, setFrais] = useState([])
   const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState('all') // 'month' | 'all'
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMMM yyyy', { locale: fr }))
   const [collapsed, setCollapsed] = useState({})
   const [showClientForm, setShowClientForm] = useState(false)
   const [showFraisForm, setShowFraisForm] = useState(false)
@@ -129,19 +129,12 @@ export default function Compta() {
     setFrais(prev => prev.filter(f => f.id !== id))
   }
 
-  // Période filtrée
-  const now = new Date()
-  const monthStart = startOfMonth(now)
-  const monthEnd = endOfMonth(now)
-
-  function inPeriod(dateStr) {
-    if (period === 'all') return true
-    if (!dateStr) return false
-    return isWithinInterval(new Date(dateStr), { start: monthStart, end: monthEnd })
-  }
-
-  const filteredEntries = entries.filter(e => inPeriod(e.date_paiement))
-  const filteredFrais = frais.filter(f => inPeriod(f.date_frais))
+  const filteredEntries = selectedMonth === 'all'
+    ? entries
+    : entries.filter(e => e.date_paiement && format(new Date(e.date_paiement), 'MMMM yyyy', { locale: fr }) === selectedMonth)
+  const filteredFrais = selectedMonth === 'all'
+    ? frais
+    : frais.filter(f => f.date_frais && format(new Date(f.date_frais), 'MMMM yyyy', { locale: fr }) === selectedMonth)
 
   // Stats
   const totalCollecte = filteredEntries.reduce((s, e) => s + (Number(e.paiement_recu) || 0), 0)
@@ -158,22 +151,25 @@ export default function Compta() {
     return exp && differenceInDays(today, exp) > 0
   })
 
-  // Groupement mensuel
+  // Liste des mois disponibles (pour le dropdown)
+  const allMonthKeys = Array.from(new Set(
+    [...entries.map(e => e.date_paiement), ...frais.map(f => f.date_frais)]
+      .filter(Boolean)
+      .map(d => format(new Date(d), 'MMMM yyyy', { locale: fr }))
+  )).sort((a, b) => {
+    const da = entries.find(e => e.date_paiement && format(new Date(e.date_paiement), 'MMMM yyyy', { locale: fr }) === a)?.date_paiement
+    const db = entries.find(e => e.date_paiement && format(new Date(e.date_paiement), 'MMMM yyyy', { locale: fr }) === b)?.date_paiement
+    return (da ?? '') < (db ?? '') ? -1 : 1
+  })
+
   function getMonthKey(dateStr) {
     if (!dateStr) return 'Sans date'
     return format(new Date(dateStr), 'MMMM yyyy', { locale: fr })
   }
 
-  const allDates = [
-    ...filteredEntries.map(e => e.date_paiement),
-    ...filteredFrais.map(f => f.date_frais),
-  ].filter(Boolean)
-
-  const monthKeys = ['Sans date', ...Array.from(new Set(allDates.map(d => format(new Date(d), 'MMMM yyyy', { locale: fr })))).sort((a, b) => {
-    const da = entries.find(e => e.date_paiement && format(new Date(e.date_paiement), 'MMMM yyyy', { locale: fr }) === a)?.date_paiement
-    const db = entries.find(e => e.date_paiement && format(new Date(e.date_paiement), 'MMMM yyyy', { locale: fr }) === b)?.date_paiement
-    return (da ?? '') < (db ?? '') ? -1 : 1
-  })]
+  const monthKeys = selectedMonth === 'all'
+    ? ['Sans date', ...allMonthKeys]
+    : [selectedMonth]
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -199,19 +195,18 @@ export default function Compta() {
         </div>
       </div>
 
-      {/* Toggle période */}
-      <div className="flex items-center gap-1 bg-brand-surface border border-brand-border rounded-lg p-1 w-fit mb-5">
-        {[{ value: 'month', label: 'Ce mois' }, { value: 'all', label: 'Depuis création' }].map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => setPeriod(opt.value)}
-            className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-              period === opt.value ? 'bg-brand-red text-white' : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+      {/* Sélecteur de mois */}
+      <div className="flex items-center gap-2 mb-5">
+        <select
+          value={selectedMonth}
+          onChange={e => setSelectedMonth(e.target.value)}
+          className="bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:border-zinc-600 capitalize"
+        >
+          <option value="all">Tous les mois</option>
+          {allMonthKeys.map(m => (
+            <option key={m} value={m} className="capitalize">{m}</option>
+          ))}
+        </select>
       </div>
 
       {/* Stats */}
