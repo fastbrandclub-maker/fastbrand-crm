@@ -86,14 +86,29 @@ export default function Dashboard() {
     return student.student_steps?.some(s => s.status === 'blocked')
   }
 
+  const [dismissedExpired, setDismissedExpired] = useState(
+    () => new Set(JSON.parse(localStorage.getItem('dismissedExpired') ?? '[]'))
+  )
+
   const blockedStudents = students.filter(hasBlocked)
   const inactiveStudents = students.filter(s => isInactive(s) && !hasBlocked(s))
   const litigeStudents = students.filter(s => s.has_litige)
   const callsThisWeek = calls.filter(c => isThisWeek(new Date(c.call_date), { weekStartsOn: 1 }))
   const expiredStudents = students.filter(s => {
     const end = getEndDate(s.offre, s.start_date)
-    return end && differenceInDays(new Date(), end) >= 0
+    return end && differenceInDays(new Date(), end) >= 0 && !dismissedExpired.has(s.id)
   })
+
+  function dismissExpired(id) {
+    const next = new Set([...dismissedExpired, id])
+    setDismissedExpired(next)
+    localStorage.setItem('dismissedExpired', JSON.stringify([...next]))
+  }
+
+  async function resolveLitige(student) {
+    await supabase.from('students').update({ has_litige: false, litige_description: null }).eq('id', student.id)
+    setStudents(prev => prev.map(s => s.id === student.id ? { ...s, has_litige: false, litige_description: null } : s))
+  }
 
   function sendLitigeWA(student) {
     const lilian = TEAM.find(m => m.name === 'Lilian')
@@ -128,16 +143,24 @@ export default function Dashboard() {
           </div>
           <div className="space-y-2">
             {litigeStudents.map(s => (
-              <div key={s.id} className="flex items-center justify-between">
-                <Link to={`/students/${s.id}`} className="text-sm font-medium text-white hover:text-brand-red transition-colors">
+              <div key={s.id} className="flex items-center justify-between gap-2">
+                <Link to={`/students/${s.id}`} className="text-sm font-medium text-white hover:text-brand-red transition-colors min-w-0 truncate">
                   {s.first_name} {s.last_name}
                   {s.litige_description && (
                     <span className="text-xs text-zinc-400 font-normal ml-2">— {s.litige_description}</span>
                   )}
                 </Link>
-                <button onClick={() => sendLitigeWA(s)} className="text-xs text-brand-red hover:underline flex items-center gap-1">
-                  <Phone size={10} /> Notifier
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => sendLitigeWA(s)} className="text-xs text-brand-red hover:underline flex items-center gap-1">
+                    <Phone size={10} /> Notifier
+                  </button>
+                  <button
+                    onClick={() => resolveLitige(s)}
+                    className="text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-md transition-colors"
+                  >
+                    C'est géré
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -156,17 +179,23 @@ export default function Dashboard() {
               const end = getEndDate(s.offre, s.start_date)
               const daysAgo = differenceInDays(new Date(), end)
               return (
-                <Link key={s.id} to={`/students/${s.id}`} className="flex items-center justify-between group">
-                  <div className="flex items-center gap-2 min-w-0">
+                <div key={s.id} className="flex items-center justify-between gap-2">
+                  <Link to={`/students/${s.id}`} className="flex items-center gap-2 min-w-0 group">
                     <OfferBadge offre={s.offre} />
                     <p className="text-sm font-medium text-white group-hover:text-brand-red transition-colors truncate">
                       {s.first_name} {s.last_name}
                     </p>
+                  </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-red-400">expiré depuis {daysAgo}j</span>
+                    <button
+                      onClick={() => dismissExpired(s.id)}
+                      className="text-xs bg-emerald-900/50 hover:bg-emerald-800/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-md transition-colors"
+                    >
+                      C'est géré
+                    </button>
                   </div>
-                  <span className="text-xs text-red-400 shrink-0 ml-2">
-                    expiré depuis {daysAgo}j
-                  </span>
-                </Link>
+                </div>
               )
             })}
           </div>

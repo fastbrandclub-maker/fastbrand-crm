@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, Bell } from 'lucide-react'
+import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, Bell, Trash2 } from 'lucide-react'
 import { OfferTimer, getEndDate } from '../components/students/OfferTimer'
 
 const RONALDO_PHONE = '33641016134'
@@ -256,6 +256,20 @@ export default function Students() {
                       </div>
                     </div>
                     <RelanceButton firstName={student.first_name} />
+                    {isAdmin && (
+                      <button
+                        onClick={async e => {
+                          e.preventDefault()
+                          if (!window.confirm(`Supprimer ${student.first_name} ${student.last_name} ?`)) return
+                          await supabase.from('students').delete().eq('id', student.id)
+                          setStudents(prev => prev.filter(s => s.id !== student.id))
+                        }}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors shrink-0"
+                        title="Supprimer l'élève"
+                      >
+                        <Trash2 size={14} className="text-red-400" />
+                      </button>
+                    )}
                     <ChevronRight size={15} className="text-zinc-600 group-hover:text-brand-red transition-colors" />
                   </div>
                 </div>
