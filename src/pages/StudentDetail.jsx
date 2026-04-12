@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
-  ArrowLeft,
   Edit,
   Phone,
   Plus,
@@ -9,10 +8,12 @@ import {
   ExternalLink,
   StickyNote,
   ChevronLeft,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { STEPS } from '../lib/constants'
+import { STEPS, TEAM } from '../lib/constants'
 import StepCard from '../components/students/StepCard'
 import CallForm from '../components/students/CallForm'
 import StudentForm from '../components/students/StudentForm'
@@ -37,9 +38,32 @@ export default function StudentDetail() {
   const [showEditStudent, setShowEditStudent] = useState(false)
   const [showAddCall, setShowAddCall] = useState(false)
   const [showAddNote, setShowAddNote] = useState(false)
+  const [showLitige, setShowLitige] = useState(false)
   const [noteText, setNoteText] = useState('')
   const [noteStep, setNoteStep] = useState('')
   const [savingNote, setSavingNote] = useState(false)
+  const [litigeText, setLitigeText] = useState('')
+  const [savingLitige, setSavingLitige] = useState(false)
+
+  async function handleLitige() {
+    setSavingLitige(true)
+    const newLitige = !student.has_litige
+    await supabase
+      .from('students')
+      .update({ has_litige: newLitige, litige_description: newLitige ? litigeText : null })
+      .eq('id', id)
+    setStudent(prev => ({ ...prev, has_litige: newLitige, litige_description: newLitige ? litigeText : null }))
+    setSavingLitige(false)
+    setShowLitige(false)
+
+    if (newLitige) {
+      const lilian = TEAM.find(m => m.name === 'Lilian')
+      if (lilian) {
+        const msg = encodeURIComponent(`⚠️ Litige signalé pour ${student.first_name} ${student.last_name}${litigeText ? ` : ${litigeText}` : ''} — à traiter`)
+        window.open(`https://wa.me/${lilian.phone}?text=${msg}`, '_blank')
+      }
+    }
+  }
 
   async function loadData() {
     const [studentRes, stepsRes, callsRes, notesRes] = await Promise.all([
@@ -168,12 +192,23 @@ export default function StudentDetail() {
               )}
             </div>
           </div>
-          {isCoach && (
-            <Button variant="secondary" size="sm" onClick={() => setShowEditStudent(true)}>
-              <Edit size={13} />
-              Modifier
-            </Button>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {isCoach && (
+              <Button variant="secondary" size="sm" onClick={() => setShowEditStudent(true)}>
+                <Edit size={13} />
+                Modifier
+              </Button>
+            )}
+            {isCoach && (
+              <Button
+                size="sm"
+                variant={student.has_litige ? 'danger' : 'secondary'}
+                onClick={() => student.has_litige ? handleLitige() : setShowLitige(true)}
+              >
+                {student.has_litige ? <><ShieldCheck size={13} /> Résoudre litige</> : <><ShieldAlert size={13} /> Signaler litige</>}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Meta */}
@@ -384,7 +419,31 @@ export default function StudentDetail() {
         />
       </Modal>
 
-      <Modal open={showAddNote} onClose={() => setShowAddNote(false)} title="Ajouter un point d'amélioration">
+      <Modal open={showLitige} onClose={() => setShowLitige(false)} title="Signaler un litige">
+        <div className="space-y-4">
+          <div className="flex items-start gap-2 bg-red-950/30 border border-red-800/30 rounded-lg p-3">
+            <ShieldAlert size={14} className="text-brand-red mt-0.5 shrink-0" />
+            <p className="text-xs text-zinc-400">
+              Un message WhatsApp sera automatiquement envoyé à Lilian pour traiter le litige.
+            </p>
+          </div>
+          <Textarea
+            label="Description du litige *"
+            value={litigeText}
+            onChange={e => setLitigeText(e.target.value)}
+            placeholder="Décris le problème avec cet élève..."
+            rows={4}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setShowLitige(false)}>Annuler</Button>
+            <Button variant="danger" onClick={handleLitige} disabled={!litigeText.trim() || savingLitige}>
+              {savingLitige ? 'Envoi...' : '⚠️ Signaler & notifier'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={showAddNote} onClose={() => setShowAddNote(false)} title="Ajouter un feedback">
         <div className="space-y-4">
           <Select
             label="Étape concernée (optionnel)"

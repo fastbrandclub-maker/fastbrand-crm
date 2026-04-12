@@ -1,23 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, AlertTriangle, Clock, CheckCircle, ArrowRight, Phone } from 'lucide-react'
+import { Users, AlertTriangle, Clock, CheckCircle, ArrowRight, Phone, MessageSquare, CalendarDays, ShieldAlert } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { STEPS, INACTIVITY_DAYS } from '../lib/constants'
-import { formatDistanceToNow, differenceInDays, format } from 'date-fns'
+import { STEPS, INACTIVITY_DAYS, TEAM } from '../lib/constants'
+import { formatDistanceToNow, differenceInDays, format, isThisWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
-function StatCard({ icon: Icon, label, value, color = 'text-white', sublabel }) {
+function StatCard({ icon: Icon, label, value, color = 'text-white' }) {
   return (
-    <div className="bg-brand-surface border border-brand-border rounded-xl p-5">
+    <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">{label}</p>
           <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
-          {sublabel && <p className="text-xs text-zinc-600 mt-1">{sublabel}</p>}
         </div>
-        <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center">
-          <Icon size={18} className="text-zinc-400" />
+        <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center">
+          <Icon size={16} className="text-zinc-400" />
         </div>
       </div>
     </div>
@@ -28,30 +27,45 @@ export default function Dashboard() {
   const { profile, isAdmin } = useAuth()
   const [students, setStudents] = useState([])
   const [calls, setCalls] = useState([])
+  const [feedbacks, setFeedbacks] = useState([])
+  const [nextAppt, setNextAppt] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  const firstName = profile?.full_name?.split(' ')[0] ?? profile?.email?.split('@')[0] ?? 'toi'
 
   useEffect(() => {
     async function load() {
-      const query = supabase
+      const studentsQuery = supabase
         .from('students')
-        .select(`*, student_steps(*), profiles:coach_id(full_name)`)
+        .select('*, student_steps(*), profiles:coach_id(full_name)')
         .order('created_at', { ascending: false })
+      if (!isAdmin) studentsQuery.eq('coach_id', profile?.id)
 
-      if (!isAdmin) {
-        query.eq('coach_id', profile?.id)
-      }
+      const callsQuery = supabase
+        .from('calls')
+        .select('*, students(first_name, last_name, id)')
+        .order('call_date', { ascending: false })
+        .limit(5)
+      if (!isAdmin) callsQuery.eq('coach_id', profile?.id)
 
-      const [studentsRes, callsRes] = await Promise.all([
-        query,
-        supabase
-          .from('calls')
-          .select('*, students(first_name, last_name)')
-          .order('call_date', { ascending: false })
-          .limit(5),
-      ])
+      const feedbacksQuery = supabase
+        .from('improvement_notes')
+        .select('*, students(first_name, last_name, id), profiles:author_id(full_name)')
+        .order('created_at', { ascending: false })
+        .limit(6)
 
-      setStudents(studentsRes.data ?? [])
-      setCalls(callsRes.data ?? [])
+      const apptQuery = supabase
+        .from('events')
+        .select('*')
+        .gte('event_date', new Date().toISOString())
+        .order('event_date', { ascending: true })
+        .limit(1)
+
+      const [s, c, f, a] = await Promise.all([studentsQuery, callsQuery, feedbacksQuery, apptQuery])
+      setStudents(s.data ?? [])
+      setCalls(c.data ?? [])
+      setFeedbacks(f.data ?? [])
+      setNextAppt(a.data?.[0] ?? null)
       setLoading(false)
     }
     if (profile) load()
@@ -60,8 +74,7 @@ export default function Dashboard() {
   function getCurrentStep(steps) {
     const inProgress = steps?.find(s => s.status === 'in_progress')
     if (inProgress) return inProgress.step_number
-    const firstTodo = steps?.find(s => s.status === 'todo')
-    return firstTodo?.step_number ?? 9
+    return steps?.find(s => s.status === 'todo')?.step_number ?? 9
   }
 
   function isInactive(student) {
@@ -72,12 +85,17 @@ export default function Dashboard() {
     return student.student_steps?.some(s => s.status === 'blocked')
   }
 
-  const activeStudents = students.length
   const blockedStudents = students.filter(hasBlocked)
-  const inactiveStudents = students.filter(isInactive)
-  const validatedAll = students.filter(s =>
-    s.student_steps?.every(st => st.status === 'validated')
-  )
+  const inactiveStudents = students.filter(s => isInactive(s) && !hasBlocked(s))
+  const litigeStudents = students.filter(s => s.has_litige)
+  const callsThisWeek = calls.filter(c => isThisWeek(new Date(c.call_date), { weekStartsOn: 1 }))
+
+  function sendLitigeWA(student) {
+    const lilian = TEAM.find(m => m.name === 'Lilian')
+    if (!lilian) return
+    const msg = encodeURIComponent(`⚠️ Litige signalé pour ${student.first_name} ${student.last_name} — à traiter`)
+    window.open(`https://wa.me/${lilian.phone}?text=${msg}`, '_blank')
+  }
 
   if (loading) {
     return (
@@ -88,143 +106,174 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-white">Dashboard</h1>
-        <p className="text-sm text-zinc-500 mt-0.5">
-          Bonjour {profile?.full_name?.split(' ')[0]} — {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+    <div className="p-4 lg:p-6 max-w-6xl mx-auto">
+      <div className="mb-5">
+        <h1 className="text-xl font-bold text-white">Bonjour {firstName} 👋</h1>
+        <p className="text-sm text-zinc-500 mt-0.5 capitalize">
+          {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
         </p>
       </div>
 
+      {/* Litiges */}
+      {litigeStudents.length > 0 && (
+        <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldAlert size={14} className="text-brand-red" />
+            <p className="text-sm font-bold text-brand-red">Litiges en cours</p>
+          </div>
+          <div className="space-y-2">
+            {litigeStudents.map(s => (
+              <div key={s.id} className="flex items-center justify-between">
+                <Link to={`/students/${s.id}`} className="text-sm font-medium text-white hover:text-brand-red transition-colors">
+                  {s.first_name} {s.last_name}
+                  {s.litige_description && (
+                    <span className="text-xs text-zinc-400 font-normal ml-2">— {s.litige_description}</span>
+                  )}
+                </Link>
+                <button onClick={() => sendLitigeWA(s)} className="text-xs text-brand-red hover:underline flex items-center gap-1">
+                  <Phone size={10} /> Notifier
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={Users} label="Élèves actifs" value={activeStudents} />
-        <StatCard
-          icon={AlertTriangle}
-          label="Élèves bloqués"
-          value={blockedStudents.length}
-          color={blockedStudents.length > 0 ? 'text-brand-red' : 'text-white'}
-        />
-        <StatCard
-          icon={Clock}
-          label="Inactifs +7j"
-          value={inactiveStudents.length}
-          color={inactiveStudents.length > 0 ? 'text-amber-400' : 'text-white'}
-        />
-        <StatCard
-          icon={CheckCircle}
-          label="Programme terminé"
-          value={validatedAll.length}
-          color="text-emerald-400"
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <StatCard icon={Users} label="Élèves actifs" value={students.length} />
+        <StatCard icon={AlertTriangle} label="Bloqués" value={blockedStudents.length} color={blockedStudents.length > 0 ? 'text-brand-red' : 'text-white'} />
+        <StatCard icon={Clock} label="Inactifs +7j" value={inactiveStudents.length} color={inactiveStudents.length > 0 ? 'text-amber-400' : 'text-white'} />
+        <StatCard icon={Phone} label="Calls cette semaine" value={callsThisWeek.length} color="text-blue-400" />
       </div>
 
+      {/* Prochain RDV */}
+      {nextAppt && (
+        <Link to="/calendar" className="flex items-center gap-3 bg-brand-surface border border-brand-border hover:border-zinc-700 rounded-xl p-4 mb-4 transition-colors">
+          <div className="w-9 h-9 bg-brand-red/10 rounded-lg flex items-center justify-center shrink-0">
+            <CalendarDays size={15} className="text-brand-red" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-zinc-500">Prochain RDV</p>
+            <p className="text-sm font-semibold text-white truncate">{nextAppt.title}</p>
+            <p className="text-xs text-zinc-500 capitalize">
+              {format(new Date(nextAppt.event_date), "EEEE d MMM 'à' HH:mm", { locale: fr })}
+              {nextAppt.assigned_to && ` · ${nextAppt.assigned_to}`}
+            </p>
+          </div>
+          <ArrowRight size={14} className="text-zinc-600 shrink-0" />
+        </Link>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Alerts */}
+        {/* Alertes */}
         <div className="space-y-3">
-          {/* Blocked */}
           {blockedStudents.length > 0 && (
             <div className="bg-brand-surface border border-red-900/50 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={14} className="text-brand-red" />
+                <AlertTriangle size={13} className="text-brand-red" />
                 <p className="text-sm font-semibold text-white">Élèves bloqués</p>
               </div>
               <div className="space-y-2">
                 {blockedStudents.map(s => (
-                  <Link
-                    key={s.id}
-                    to={`/students/${s.id}`}
-                    className="flex items-center justify-between group"
-                  >
+                  <Link key={s.id} to={`/students/${s.id}`} className="flex items-center justify-between group">
                     <div>
-                      <p className="text-sm font-medium text-white group-hover:text-brand-red transition-colors">
-                        {s.first_name} {s.last_name}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        Étape {getCurrentStep(s.student_steps)} — {STEPS[getCurrentStep(s.student_steps) - 1]?.name}
-                      </p>
+                      <p className="text-sm font-medium text-white group-hover:text-brand-red transition-colors">{s.first_name} {s.last_name}</p>
+                      <p className="text-xs text-zinc-500">Étape {getCurrentStep(s.student_steps)} — {STEPS[getCurrentStep(s.student_steps) - 1]?.name}</p>
                     </div>
-                    <ArrowRight size={14} className="text-zinc-600 group-hover:text-brand-red transition-colors" />
+                    <ArrowRight size={13} className="text-zinc-600 group-hover:text-brand-red transition-colors" />
                   </Link>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Inactive */}
           {inactiveStudents.length > 0 && (
             <div className="bg-brand-surface border border-amber-900/40 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Clock size={14} className="text-amber-400" />
-                <p className="text-sm font-semibold text-white">Inactifs depuis +7 jours</p>
+              <div className="flex items-center gap-2 mb-1">
+                <Clock size={13} className="text-amber-400" />
+                <p className="text-sm font-semibold text-white">Inactifs +7j</p>
               </div>
+              <p className="text-xs text-zinc-600 mb-3">Aucune mise à jour depuis plus de 7 jours</p>
               <div className="space-y-2">
                 {inactiveStudents.map(s => (
-                  <Link
-                    key={s.id}
-                    to={`/students/${s.id}`}
-                    className="flex items-center justify-between group"
-                  >
+                  <Link key={s.id} to={`/students/${s.id}`} className="flex items-center justify-between group">
                     <div>
-                      <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors">
-                        {s.first_name} {s.last_name}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        Dernière activité{' '}
-                        {formatDistanceToNow(new Date(s.last_updated_at), { locale: fr, addSuffix: true })}
-                      </p>
+                      <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors">{s.first_name} {s.last_name}</p>
+                      <p className="text-xs text-zinc-500">{formatDistanceToNow(new Date(s.last_updated_at), { locale: fr, addSuffix: true })}</p>
                     </div>
-                    <ArrowRight size={14} className="text-zinc-600 group-hover:text-amber-400 transition-colors" />
+                    <ArrowRight size={13} className="text-zinc-600 group-hover:text-amber-400 transition-colors" />
                   </Link>
                 ))}
               </div>
             </div>
           )}
 
-          {blockedStudents.length === 0 && inactiveStudents.length === 0 && (
+          {blockedStudents.length === 0 && inactiveStudents.length === 0 && litigeStudents.length === 0 && (
             <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
               <div className="flex items-center gap-2">
-                <CheckCircle size={14} className="text-emerald-400" />
+                <CheckCircle size={13} className="text-emerald-400" />
                 <p className="text-sm text-zinc-400">Aucune alerte — tout est à jour !</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Recent calls */}
-        <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Phone size={14} className="text-zinc-400" />
-            <p className="text-sm font-semibold text-white">Derniers calls</p>
-          </div>
-          {calls.length === 0 ? (
-            <p className="text-sm text-zinc-500">Aucun call enregistré.</p>
-          ) : (
-            <div className="space-y-3">
-              {calls.map(call => (
-                <div key={call.id} className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand-red mt-1.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-white truncate">
-                        {call.students?.first_name} {call.students?.last_name}
-                      </p>
-                      {call.duration_minutes && (
-                        <span className="text-xs text-zinc-500 shrink-0">{call.duration_minutes} min</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-zinc-500">
-                      {format(new Date(call.call_date), 'd MMM yyyy à HH:mm', { locale: fr })}
-                    </p>
-                    {call.summary && (
-                      <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{call.summary}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+        {/* Feedbacks + Calls */}
+        <div className="space-y-3">
+          <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MessageSquare size={13} className="text-blue-400" />
+              <p className="text-sm font-semibold text-white">Feedbacks récents</p>
             </div>
-          )}
+            {feedbacks.length === 0 ? (
+              <p className="text-xs text-zinc-500">Aucun feedback enregistré.</p>
+            ) : (
+              <div className="space-y-3">
+                {feedbacks.map(fb => (
+                  <Link key={fb.id} to={`/students/${fb.students?.id}`} className="block group">
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-white group-hover:text-brand-red transition-colors">
+                          {fb.students?.first_name} {fb.students?.last_name}
+                          {fb.step_number && <span className="text-zinc-500 font-normal"> · Étape {fb.step_number}</span>}
+                        </p>
+                        <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5">{fb.note}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Phone size={13} className="text-zinc-400" />
+              <p className="text-sm font-semibold text-white">Derniers calls</p>
+            </div>
+            {calls.length === 0 ? (
+              <p className="text-xs text-zinc-500">Aucun call enregistré.</p>
+            ) : (
+              <div className="space-y-2">
+                {calls.map(call => (
+                  <Link key={call.id} to={`/students/${call.students?.id}`} className="block group">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-brand-red shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-white group-hover:text-brand-red transition-colors truncate">
+                          {call.students?.first_name} {call.students?.last_name}
+                          {call.duration_minutes && <span className="text-zinc-500 font-normal ml-1">· {call.duration_minutes} min</span>}
+                        </p>
+                        <p className="text-xs text-zinc-600">{format(new Date(call.call_date), 'd MMM à HH:mm', { locale: fr })}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

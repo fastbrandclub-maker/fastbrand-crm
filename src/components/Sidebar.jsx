@@ -19,7 +19,7 @@ const nav = [
   { to: '/resources', icon: BookOpen, label: 'Ressources' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }) {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
 
@@ -50,6 +50,7 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={end}
+            onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 isActive
