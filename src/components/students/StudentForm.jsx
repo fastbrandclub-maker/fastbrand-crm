@@ -14,7 +14,6 @@ export default function StudentForm({ student, onSave, onCancel }) {
     first_name: student?.first_name ?? '',
     last_name: student?.last_name ?? '',
     email: student?.email ?? '',
-    phone: student?.phone ?? '',
     start_date: student?.start_date ?? new Date().toISOString().slice(0, 10),
     coach_id: student?.coach_id ?? profile?.id ?? '',
     general_notes: student?.general_notes ?? '',
@@ -63,40 +62,26 @@ export default function StudentForm({ student, onSave, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <Input
-          label="Prénom *"
-          value={form.first_name}
-          onChange={e => set('first_name', e.target.value)}
-          required
-          placeholder="Prénom"
-        />
-        <Input
-          label="Nom *"
-          value={form.last_name}
-          onChange={e => set('last_name', e.target.value)}
-          required
-          placeholder="Nom"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Input
-          label="Email *"
-          type="email"
-          value={form.email}
-          onChange={e => set('email', e.target.value)}
-          required
-          placeholder="email@exemple.com"
-        />
-        <Input
-          label="Téléphone"
-          type="tel"
-          value={form.phone}
-          onChange={e => set('phone', e.target.value)}
-          placeholder="+33 6 12 34 56 78"
-        />
-      </div>
+      <Input
+        label="Prénom *"
+        value={form.first_name}
+        onChange={e => set('first_name', e.target.value)}
+        required
+        placeholder="Prénom"
+      />
+      <Input
+        label="Nom"
+        value={form.last_name}
+        onChange={e => set('last_name', e.target.value)}
+        placeholder="Nom (facultatif)"
+      />
+      <Input
+        label="Email"
+        type="email"
+        value={form.email}
+        onChange={e => set('email', e.target.value)}
+        placeholder="email@exemple.com (facultatif)"
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <Input
