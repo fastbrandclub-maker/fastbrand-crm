@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { differenceInDays, addDays, addMonths, format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { AlertTriangle, Clock, Plus, TrendingUp, Wallet, X, Receipt, ChevronDown, ChevronUp } from 'lucide-react'
+import { AlertTriangle, Clock, Plus, TrendingUp, Wallet, X, Receipt, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import Button from '../../components/ui/Button'
 
 function getExpiryDate(offre, datePaiement) {
@@ -37,14 +37,16 @@ export default function Compta() {
   const [collapsed, setCollapsed] = useState({})
   const [showClientForm, setShowClientForm] = useState(false)
   const [showFraisForm, setShowFraisForm] = useState(false)
+  const [editingEntry, setEditingEntry] = useState(null)
   const [saving, setSaving] = useState(false)
 
-  const [clientForm, setClientForm] = useState({
+  const emptyClientForm = {
     client_name: '', closer: '', offre: '6_mois', prix: '',
     date_paiement: new Date().toISOString().slice(0, 10),
     paiement_recu: '', restant_du: 0, frais_closer: '', net_apres_frais: '',
     moyen_paiement: '', cta_group: '3ème CTA',
-  })
+  }
+  const [clientForm, setClientForm] = useState(emptyClientForm)
   const [fraisForm, setFraisForm] = useState({
     description: '', montant: '', date_frais: new Date().toISOString().slice(0, 10), category: 'autre',
   })
@@ -71,9 +73,40 @@ export default function Compta() {
   async function handleAddClient(e) {
     e.preventDefault()
     setSaving(true)
-    const { data } = await supabase.from('compta_entries').insert(clientForm).select().single()
-    setSaving(false)
-    if (data) { setEntries(prev => [...prev, data].sort((a, b) => (a.date_paiement ?? '') > (b.date_paiement ?? '') ? 1 : -1)); setShowClientForm(false) }
+    if (editingEntry) {
+      const { data } = await supabase.from('compta_entries').update(clientForm).eq('id', editingEntry).select().single()
+      setSaving(false)
+      if (data) {
+        setEntries(prev => prev.map(en => en.id === editingEntry ? data : en))
+        setEditingEntry(null)
+        setShowClientForm(false)
+        setClientForm(emptyClientForm)
+      }
+    } else {
+      const { data } = await supabase.from('compta_entries').insert(clientForm).select().single()
+      setSaving(false)
+      if (data) { setEntries(prev => [...prev, data].sort((a, b) => (a.date_paiement ?? '') > (b.date_paiement ?? '') ? 1 : -1)); setShowClientForm(false) }
+    }
+  }
+
+  function startEdit(entry) {
+    setClientForm({
+      client_name: entry.client_name ?? '',
+      closer: entry.closer ?? '',
+      offre: entry.offre ?? '6_mois',
+      prix: entry.prix ?? '',
+      date_paiement: entry.date_paiement ?? new Date().toISOString().slice(0, 10),
+      paiement_recu: entry.paiement_recu ?? '',
+      restant_du: entry.restant_du ?? 0,
+      frais_closer: entry.frais_closer ?? '',
+      net_apres_frais: entry.net_apres_frais ?? '',
+      moyen_paiement: entry.moyen_paiement ?? '',
+      cta_group: entry.cta_group ?? '3ème CTA',
+    })
+    setEditingEntry(entry.id)
+    setShowClientForm(true)
+    setShowFraisForm(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   async function handleAddFrais(e) {
@@ -160,7 +193,7 @@ export default function Compta() {
           <Button variant="secondary" onClick={() => { setShowFraisForm(true); setShowClientForm(false) }}>
             <Receipt size={14} /> Ajouter des frais
           </Button>
-          <Button onClick={() => { setShowClientForm(true); setShowFraisForm(false) }}>
+          <Button onClick={() => { setEditingEntry(null); setClientForm(emptyClientForm); setShowClientForm(true); setShowFraisForm(false) }}>
             <Plus size={15} /> Ajouter un client
           </Button>
         </div>
@@ -245,8 +278,8 @@ export default function Compta() {
       {showClientForm && (
         <div className="bg-brand-surface border border-brand-border rounded-xl p-5 mb-5">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-bold text-white">Nouveau client</p>
-            <button onClick={() => setShowClientForm(false)}><X size={16} className="text-zinc-500 hover:text-white" /></button>
+            <p className="text-sm font-bold text-white">{editingEntry ? `Modifier — ${clientForm.client_name}` : 'Nouveau client'}</p>
+            <button onClick={() => { setShowClientForm(false); setEditingEntry(null); setClientForm(emptyClientForm) }}><X size={16} className="text-zinc-500 hover:text-white" /></button>
           </div>
           <form onSubmit={handleAddClient} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
@@ -403,7 +436,10 @@ export default function Compta() {
                                 <td className="px-3 py-2.5 text-blue-400 font-medium">{fmt(e.net_apres_frais)}</td>
                                 <td className="px-3 py-2.5 text-zinc-500 max-w-[100px] truncate">{e.moyen_paiement ?? '—'}</td>
                                 <td className="px-3 py-2.5">
-                                  <button onClick={() => deleteEntry(e.id)} className="text-zinc-600 hover:text-red-400 transition-colors"><X size={13} /></button>
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={() => startEdit(e)} className="text-zinc-600 hover:text-blue-400 transition-colors"><Pencil size={13} /></button>
+                                    <button onClick={() => deleteEntry(e.id)} className="text-zinc-600 hover:text-red-400 transition-colors"><X size={13} /></button>
+                                  </div>
                                 </td>
                               </tr>
                             )
