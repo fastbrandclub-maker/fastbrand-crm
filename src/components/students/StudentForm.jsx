@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../ui/Button'
-import Input, { Textarea, Select } from '../ui/Input'
+import Input, { Select } from '../ui/Input'
 
 export default function StudentForm({ student, onSave, onCancel }) {
   const { profile, isAdmin } = useAuth()
@@ -16,13 +16,7 @@ export default function StudentForm({ student, onSave, onCancel }) {
     email: student?.email ?? '',
     start_date: student?.start_date ?? new Date().toISOString().slice(0, 10),
     offre: student?.offre ?? 'indetermine',
-    montant_collecte: student?.montant_collecte ?? '',
-    montant_restant: student?.montant_restant ?? '',
     coach_id: student?.coach_id ?? profile?.id ?? '',
-    general_notes: student?.general_notes ?? '',
-    project_url: student?.project_url ?? '',
-    shop_url: student?.shop_url ?? '',
-    doc_url: student?.doc_url ?? '',
   })
 
   useEffect(() => {
@@ -92,33 +86,12 @@ export default function StudentForm({ student, onSave, onCancel }) {
           value={form.offre}
           onChange={e => set('offre', e.target.value)}
         >
-          <option value="70_jours">60 Jours (70j)</option>
-          <option value="6_mois">6 Mois</option>
-          <option value="12_mois">12 Mois</option>
-          <option value="resultats">Résultats</option>
-          <option value="indetermine">Indéterminé</option>
+          <option value="70_jours">60 JOURS</option>
+          <option value="6_mois">6 MOIS</option>
+          <option value="12_mois">12 MOIS</option>
+          <option value="resultats">RÉSULTATS</option>
+          <option value="indetermine">INDÉTERMINÉ</option>
         </Select>
-        <div />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Input
-          label="Montant collecté (€)"
-          type="number"
-          value={form.montant_collecte}
-          onChange={e => set('montant_collecte', e.target.value)}
-          placeholder="2500"
-        />
-        <Input
-          label="Montant restant (€)"
-          type="number"
-          value={form.montant_restant}
-          onChange={e => set('montant_restant', e.target.value)}
-          placeholder="0"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
         <Input
           label="Date de démarrage *"
           type="date"
@@ -126,49 +99,20 @@ export default function StudentForm({ student, onSave, onCancel }) {
           onChange={e => set('start_date', e.target.value)}
           required
         />
-        {isAdmin && coaches.length > 0 ? (
-          <Select
-            label="Coach assigné"
-            value={form.coach_id}
-            onChange={e => set('coach_id', e.target.value)}
-          >
-            <option value="">— Sélectionner —</option>
-            {coaches.map(c => (
-              <option key={c.id} value={c.id}>{c.full_name}</option>
-            ))}
-          </Select>
-        ) : null}
       </div>
 
-      <div className="space-y-3 pt-1 border-t border-brand-border">
-        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Liens</p>
-        <Input
-          label="URL Projet / Drive"
-          value={form.project_url}
-          onChange={e => set('project_url', e.target.value)}
-          placeholder="https://drive.google.com/..."
-        />
-        <Input
-          label="URL Boutique"
-          value={form.shop_url}
-          onChange={e => set('shop_url', e.target.value)}
-          placeholder="https://ma-boutique.myshopify.com"
-        />
-        <Input
-          label="URL Documentation"
-          value={form.doc_url}
-          onChange={e => set('doc_url', e.target.value)}
-          placeholder="https://notion.so/..."
-        />
-      </div>
-
-      <Textarea
-        label="Notes générales"
-        value={form.general_notes}
-        onChange={e => set('general_notes', e.target.value)}
-        placeholder="Informations importantes sur l'élève..."
-        rows={3}
-      />
+      {isAdmin && coaches.length > 0 && (
+        <Select
+          label="Coach assigné"
+          value={form.coach_id}
+          onChange={e => set('coach_id', e.target.value)}
+        >
+          <option value="">— Sélectionner —</option>
+          {coaches.map(c => (
+            <option key={c.id} value={c.id}>{c.full_name}</option>
+          ))}
+        </Select>
+      )}
 
       {error && (
         <p className="text-sm text-red-400 bg-red-950/50 border border-red-800 rounded-md px-3 py-2">
