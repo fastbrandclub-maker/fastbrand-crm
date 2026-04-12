@@ -56,7 +56,10 @@ export default function Students() {
   }
 
   useEffect(() => {
-    if (profile) loadStudents()
+    if (!profile) return
+    loadStudents()
+    const interval = setInterval(loadStudents, 30000)
+    return () => clearInterval(interval)
   }, [profile])
 
   function getCurrentStep(steps) {

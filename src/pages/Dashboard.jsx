@@ -69,7 +69,10 @@ export default function Dashboard() {
       setNextAppt(a.data?.[0] ?? null)
       setLoading(false)
     }
-    if (profile) load()
+    if (!profile) return
+    load()
+    const interval = setInterval(load, 30000)
+    return () => clearInterval(interval)
   }, [profile, isAdmin])
 
   function getCurrentStep(steps) {
