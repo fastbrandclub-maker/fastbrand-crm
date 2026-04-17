@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import {
   LayoutDashboard,
   Users,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ROLES } from '../lib/constants'
+import { supabase } from '../lib/supabase'
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -31,6 +33,30 @@ const adminNav = [
 export default function Sidebar({ onClose }) {
   const { profile, signOut, isAdmin } = useAuth()
   const navigate = useNavigate()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    async function loadUnread() {
+      const { count } = await supabase
+        .from('student_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('read_by_coach', false)
+      setUnreadCount(count ?? 0)
+    }
+    loadUnread()
+
+    const channel = supabase
+      .channel('sidebar-unread')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'student_messages' },
+        () => setUnreadCount(c => c + 1)
+      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'student_messages' },
+        () => loadUnread()
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [])
 
   async function handleSignOut() {
     await signOut()
@@ -69,7 +95,12 @@ export default function Sidebar({ onClose }) {
             }
           >
             <Icon size={16} />
-            {label}
+            <span className="flex-1">{label}</span>
+            {label === 'Élèves' && unreadCount > 0 && (
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-brand-red text-white text-[10px] font-bold flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </NavLink>
         ))}
 

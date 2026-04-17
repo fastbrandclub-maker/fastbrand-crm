@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Students from './pages/Students'
 import StudentDetail from './pages/StudentDetail'
+import StudentPortal from './pages/StudentPortal'
 import Kanban from './pages/Kanban'
 import Calendar from './pages/Calendar'
 import Resources from './pages/Resources'
@@ -38,6 +39,9 @@ export default function App() {
 
   return (
     <Routes>
+      {/* Route publique — portail élève sans auth */}
+      <Route path="/s/:token" element={<StudentPortal />} />
+
       <Route
         path="/login"
         element={user ? <Navigate to="/" replace /> : <Login />}

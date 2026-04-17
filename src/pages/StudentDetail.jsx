@@ -10,6 +10,12 @@ import {
   ChevronLeft,
   ShieldAlert,
   ShieldCheck,
+  Link2,
+  Check,
+  MessageSquare,
+  AlertTriangle as AlertIcon,
+  HelpCircle,
+  BarChart2,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -22,7 +28,7 @@ import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
 import { Textarea } from '../components/ui/Input'
 import { Select } from '../components/ui/Input'
-import { format } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 export default function StudentDetail() {
@@ -34,7 +40,9 @@ export default function StudentDetail() {
   const [steps, setSteps] = useState([])
   const [calls, setCalls] = useState([])
   const [notes, setNotes] = useState([])
+  const [studentMessages, setStudentMessages] = useState([])
   const [loading, setLoading] = useState(true)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   const [showEditStudent, setShowEditStudent] = useState(false)
   const [showAddCall, setShowAddCall] = useState(false)
@@ -67,41 +75,55 @@ export default function StudentDetail() {
   }
 
   async function loadData() {
-    const [studentRes, stepsRes, callsRes, notesRes] = await Promise.all([
-      supabase
-        .from('students')
-        .select('*, profiles:coach_id(full_name)')
-        .eq('id', id)
-        .single(),
-      supabase
-        .from('student_steps')
-        .select('*')
-        .eq('student_id', id)
-        .order('step_number'),
-      supabase
-        .from('calls')
-        .select('*, profiles:coach_id(full_name)')
-        .eq('student_id', id)
-        .order('call_date', { ascending: false }),
-      supabase
-        .from('improvement_notes')
-        .select('*, profiles:author_id(full_name)')
-        .eq('student_id', id)
-        .order('created_at', { ascending: false }),
+    const [studentRes, stepsRes, callsRes, notesRes, messagesRes] = await Promise.all([
+      supabase.from('students').select('*, profiles:coach_id(full_name)').eq('id', id).single(),
+      supabase.from('student_steps').select('*').eq('student_id', id).order('step_number'),
+      supabase.from('calls').select('*, profiles:coach_id(full_name)').eq('student_id', id).order('call_date', { ascending: false }),
+      supabase.from('improvement_notes').select('*, profiles:author_id(full_name)').eq('student_id', id).order('created_at', { ascending: false }),
+      supabase.from('student_messages').select('*').eq('student_id', id).order('created_at', { ascending: false }),
     ])
-
     setStudent(studentRes.data)
     setSteps(stepsRes.data ?? [])
     setCalls(callsRes.data ?? [])
     setNotes(notesRes.data ?? [])
+    setStudentMessages(messagesRes.data ?? [])
     setLoading(false)
   }
 
   useEffect(() => {
     loadData()
     const interval = setInterval(loadData, 30000)
-    return () => clearInterval(interval)
+
+    // Realtime : messages élève
+    const channel = supabase
+      .channel(`student-messages-${id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'student_messages', filter: `student_id=eq.${id}` },
+        (payload) => {
+          setStudentMessages(prev => [payload.new, ...prev])
+        }
+      )
+      .subscribe()
+
+    return () => {
+      clearInterval(interval)
+      supabase.removeChannel(channel)
+    }
   }, [id])
+
+  async function markMessagesRead() {
+    const unread = studentMessages.filter(m => !m.read_by_coach)
+    if (unread.length === 0) return
+    await supabase.rpc('mark_messages_read', { p_student_id: id })
+    setStudentMessages(prev => prev.map(m => ({ ...m, read_by_coach: true })))
+  }
+
+  function copyPortalLink() {
+    if (!student?.student_token) return
+    const url = `${window.location.origin}/s/${student.student_token}`
+    navigator.clipboard.writeText(url)
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2500)
+  }
 
   function handleStepUpdate(updated) {
     setSteps(prev => prev.map(s =>
@@ -195,21 +217,34 @@ export default function StudentDetail() {
               )}
             </div>
           </div>
-          {isCoach && (
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" onClick={() => setShowEditStudent(true)}>
-                <Edit size={13} />
-                <span className="hidden sm:inline">Modifier</span>
-              </Button>
-              <Button
-                size="sm"
-                variant={student.has_litige ? 'danger' : 'secondary'}
-                onClick={() => student.has_litige ? handleLitige() : setShowLitige(true)}
-              >
-                {student.has_litige ? <><ShieldCheck size={13} /><span className="hidden sm:inline"> Résoudre</span></> : <><ShieldAlert size={13} /><span className="hidden sm:inline"> Litige</span></>}
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={copyPortalLink}
+              title="Copier le lien du portail élève"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                linkCopied
+                  ? 'bg-emerald-900/40 border-emerald-700/50 text-emerald-400'
+                  : 'bg-brand-surface border-brand-border text-zinc-400 hover:text-white hover:border-zinc-600'
+              }`}
+            >
+              {linkCopied ? <><Check size={12} /> Copié !</> : <><Link2 size={12} /> Lien élève</>}
+            </button>
+            {isCoach && (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setShowEditStudent(true)}>
+                  <Edit size={13} />
+                  <span className="hidden sm:inline">Modifier</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant={student.has_litige ? 'danger' : 'secondary'}
+                  onClick={() => student.has_litige ? handleLitige() : setShowLitige(true)}
+                >
+                  {student.has_litige ? <><ShieldCheck size={13} /><span className="hidden sm:inline"> Résoudre</span></> : <><ShieldAlert size={13} /><span className="hidden sm:inline"> Litige</span></>}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Meta */}
@@ -311,6 +346,57 @@ export default function StudentDetail() {
 
         {/* Right column */}
         <div className="space-y-4">
+          {/* Messages élève */}
+          {studentMessages.length > 0 && (
+            <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <MessageSquare size={13} className="text-brand-red" />
+                  <h2 className="text-sm font-semibold text-white">Messages élève</h2>
+                  {studentMessages.filter(m => !m.read_by_coach).length > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-red text-white">
+                      {studentMessages.filter(m => !m.read_by_coach).length}
+                    </span>
+                  )}
+                </div>
+                {studentMessages.some(m => !m.read_by_coach) && (
+                  <button onClick={markMessagesRead} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                    Tout marquer lu
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {studentMessages.map(msg => {
+                  const stepName = msg.step_number ? STEPS[msg.step_number - 1]?.name : null
+                  return (
+                    <div key={msg.id} className={`rounded-lg p-3 border transition-colors ${
+                      !msg.read_by_coach
+                        ? msg.type === 'block' ? 'bg-red-950/30 border-red-800/40' : 'bg-blue-950/20 border-blue-800/30'
+                        : 'bg-brand-dark border-brand-border/50'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        {msg.type === 'block' && <AlertIcon size={11} className="text-red-400 shrink-0" />}
+                        {msg.type === 'question' && <HelpCircle size={11} className="text-amber-400 shrink-0" />}
+                        {msg.type === 'update' && <BarChart2 size={11} className="text-blue-400 shrink-0" />}
+                        <span className={`text-[10px] font-semibold uppercase tracking-wide ${
+                          msg.type === 'block' ? 'text-red-400' : msg.type === 'question' ? 'text-amber-400' : 'text-blue-400'
+                        }`}>
+                          {msg.type === 'block' ? 'Bloqué' : msg.type === 'question' ? 'Question' : 'Mise à jour'}
+                        </span>
+                        {stepName && <span className="text-[10px] text-zinc-600">· Étape {msg.step_number}</span>}
+                        {!msg.read_by_coach && <div className="w-1.5 h-1.5 rounded-full bg-brand-red ml-auto shrink-0" />}
+                      </div>
+                      <p className="text-xs text-zinc-300">{msg.message}</p>
+                      <p className="text-[10px] text-zinc-600 mt-1.5">
+                        {formatDistanceToNow(new Date(msg.created_at), { locale: fr, addSuffix: true })}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Calls */}
           <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
