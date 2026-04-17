@@ -43,6 +43,7 @@ export default function StudentDetail() {
   const [studentMessages, setStudentMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [showLinkModal, setShowLinkModal] = useState(false)
 
   const [showEditStudent, setShowEditStudent] = useState(false)
   const [showAddCall, setShowAddCall] = useState(false)
@@ -117,12 +118,22 @@ export default function StudentDetail() {
     setStudentMessages(prev => prev.map(m => ({ ...m, read_by_coach: true })))
   }
 
+  function getPortalUrl() {
+    const token = student?.student_token
+    if (!token) return null
+    return `https://fastbrand-crm.vercel.app/s/${token}`
+  }
+
   function copyPortalLink() {
-    if (!student?.student_token) return
-    const url = `${window.location.origin}/s/${student.student_token}`
-    navigator.clipboard.writeText(url)
-    setLinkCopied(true)
-    setTimeout(() => setLinkCopied(false), 2500)
+    const url = getPortalUrl()
+    if (!url) { setShowLinkModal(true); return }
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2500)
+    }).catch(() => {
+      // clipboard API failed, show modal instead
+      setShowLinkModal(true)
+    })
   }
 
   function handleStepUpdate(updated) {
@@ -219,15 +230,11 @@ export default function StudentDetail() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={copyPortalLink}
-              title="Copier le lien du portail élève"
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                linkCopied
-                  ? 'bg-emerald-900/40 border-emerald-700/50 text-emerald-400'
-                  : 'bg-brand-surface border-brand-border text-zinc-400 hover:text-white hover:border-zinc-600'
-              }`}
+              onClick={() => setShowLinkModal(true)}
+              title="Voir le lien du portail élève"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-brand-surface border-brand-border text-zinc-400 hover:text-white hover:border-zinc-600 transition-all"
             >
-              {linkCopied ? <><Check size={12} /> Copié !</> : <><Link2 size={12} /> Lien élève</>}
+              <Link2 size={12} /> Lien élève
             </button>
             {isCoach && (
               <>
@@ -577,6 +584,41 @@ export default function StudentDetail() {
               {savingNote ? 'Enregistrement...' : 'Ajouter'}
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Modal lien portail élève */}
+      <Modal open={showLinkModal} onClose={() => setShowLinkModal(false)} title="Lien du portail élève">
+        <div className="space-y-4">
+          {!student?.student_token ? (
+            <div className="bg-amber-950/30 border border-amber-800/40 rounded-lg p-3">
+              <p className="text-sm text-amber-400">Le token de cet élève n'existe pas encore.</p>
+              <p className="text-xs text-zinc-500 mt-1">Lance le SQL pour ajouter la colonne <code className="text-zinc-300">student_token</code> dans Supabase.</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-zinc-400">Copie ce lien et envoie-le à <strong className="text-white">{student.first_name}</strong> via WhatsApp :</p>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={getPortalUrl()}
+                  onFocus={e => e.target.select()}
+                  className="flex-1 bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-zinc-500 font-mono text-xs"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(getPortalUrl())
+                    setLinkCopied(true)
+                    setTimeout(() => setLinkCopied(false), 2500)
+                  }}
+                  className={`shrink-0 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${linkCopied ? 'bg-emerald-700 text-white' : 'bg-brand-red hover:bg-red-700 text-white'}`}
+                >
+                  {linkCopied ? '✓ Copié' : 'Copier'}
+                </button>
+              </div>
+              <p className="text-xs text-zinc-600">Ce lien est unique à cet élève — il peut le mettre en favori ou l'épingler dans WhatsApp.</p>
+            </>
+          )}
         </div>
       </Modal>
     </div>
