@@ -11,6 +11,7 @@ import {
   Receipt,
   TrendingUp,
   Megaphone,
+  MessageSquare,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ROLES } from '../lib/constants'
@@ -22,6 +23,7 @@ const nav = [
   { to: '/kanban', icon: Columns, label: 'Kanban' },
   { to: '/calendar', icon: CalendarDays, label: 'Calendrier' },
   { to: '/resources', icon: BookOpen, label: 'Ressources' },
+  { to: '/feedbacks', icon: MessageSquare, label: 'Feedbacks' },
 ]
 
 const adminNav = [
@@ -96,7 +98,7 @@ export default function Sidebar({ onClose }) {
           >
             <Icon size={16} />
             <span className="flex-1">{label}</span>
-            {label === 'Élèves' && unreadCount > 0 && (
+            {label === 'Feedbacks' && unreadCount > 0 && (
               <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-brand-red text-white text-[10px] font-bold flex items-center justify-center">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>

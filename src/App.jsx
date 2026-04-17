@@ -12,6 +12,7 @@ import Resources from './pages/Resources'
 import Compta from './pages/admin/Compta'
 import Sales from './pages/admin/Sales'
 import Contenu from './pages/admin/Contenu'
+import Feedbacks from './pages/Feedbacks'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="kanban" element={<Kanban />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="resources" element={<Resources />} />
+        <Route path="feedbacks" element={<Feedbacks />} />
         <Route path="admin/compta" element={<Compta />} />
         <Route path="admin/sales" element={<Sales />} />
         <Route path="admin/contenu" element={<Contenu />} />
