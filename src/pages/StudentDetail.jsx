@@ -93,7 +93,7 @@ export default function StudentDetail() {
 
   useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 30000)
+    const interval = setInterval(loadData, 5000)
 
     // Realtime : messages élève
     const channel = supabase

@@ -22,12 +22,12 @@ export default function Feedbacks() {
 
   useEffect(() => {
     loadAll()
-    const interval = setInterval(loadAll, 30000)
+    const interval = setInterval(loadAll, 5000)
 
     const channel = supabase
       .channel('feedbacks-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'student_messages' },
-        (payload) => setMessages(prev => [payload.new, ...prev])
+        () => loadAll()
       )
       .subscribe()
 

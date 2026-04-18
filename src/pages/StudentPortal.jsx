@@ -41,6 +41,7 @@ export default function StudentPortal() {
   const [generalMsg, setGeneralMsg] = useState('')
   const [sendingGeneral, setSendingGeneral] = useState(false)
   const [sentGeneral, setSentGeneral] = useState(false)
+  const [errorGeneral, setErrorGeneral] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -117,12 +118,14 @@ export default function StudentPortal() {
     e.preventDefault()
     if (!generalMsg.trim()) return
     setSendingGeneral(true)
-    await supabase.rpc('portal_add_message', {
+    setErrorGeneral(false)
+    const { error } = await supabase.rpc('portal_add_message', {
       p_token: token,
       p_message: generalMsg.trim(),
       p_type: 'feedback',
     })
     setSendingGeneral(false)
+    if (error) { setErrorGeneral(true); return }
     setSentGeneral(true)
     setGeneralMsg('')
     setTimeout(() => setSentGeneral(false), 3000)
@@ -301,6 +304,12 @@ export default function StudentPortal() {
             </div>
           ) : (
             <form onSubmit={handleSendGeneral} className="space-y-3">
+              {errorGeneral && (
+                <div className="flex items-center gap-2 bg-red-950/50 border border-red-800/40 rounded-xl px-4 py-3">
+                  <AlertTriangle size={15} className="text-red-400" />
+                  <p className="text-sm text-red-400 font-medium">Erreur d'envoi — réessaie.</p>
+                </div>
+              )}
               <textarea
                 value={generalMsg}
                 onChange={e => setGeneralMsg(e.target.value)}
