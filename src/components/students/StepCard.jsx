@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronRight, ExternalLink, Save } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { STEP_STATUS } from '../../lib/constants'
@@ -15,6 +15,15 @@ export default function StepCard({ step, stepData, studentId, readOnly, onUpdate
     notes: stepData?.notes ?? '',
     resource_link: stepData?.resource_link ?? '',
   })
+
+  // Sync when stepData changes (e.g. student updates via portal)
+  useEffect(() => {
+    setForm({
+      status: stepData?.status ?? 'todo',
+      notes: stepData?.notes ?? '',
+      resource_link: stepData?.resource_link ?? '',
+    })
+  }, [stepData?.status, stepData?.notes, stepData?.resource_link])
 
   async function handleSave() {
     setSaving(true)
@@ -73,9 +82,15 @@ export default function StepCard({ step, stepData, studentId, readOnly, onUpdate
                 <span className="text-xs text-zinc-500">Statut :</span>
                 <StatusBadge status={form.status} />
               </div>
+              {stepData?.student_note && (
+                <div className="bg-blue-950/20 border border-blue-800/30 rounded-lg px-3 py-2">
+                  <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider mb-1">Note de l'élève</p>
+                  <p className="text-sm text-zinc-300">{stepData.student_note}</p>
+                </div>
+              )}
               {form.notes && (
                 <div>
-                  <p className="text-xs text-zinc-500 mb-1">Notes</p>
+                  <p className="text-xs text-zinc-500 mb-1">Notes coach</p>
                   <p className="text-sm text-zinc-300">{form.notes}</p>
                 </div>
               )}
@@ -93,6 +108,12 @@ export default function StepCard({ step, stepData, studentId, readOnly, onUpdate
             </>
           ) : (
             <>
+              {stepData?.student_note && (
+                <div className="bg-blue-950/20 border border-blue-800/30 rounded-lg px-3 py-2">
+                  <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider mb-1">Note de l'élève</p>
+                  <p className="text-sm text-zinc-300">{stepData.student_note}</p>
+                </div>
+              )}
               <Select
                 label="Statut"
                 value={form.status}

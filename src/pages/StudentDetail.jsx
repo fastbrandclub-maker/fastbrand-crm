@@ -99,8 +99,11 @@ export default function StudentDetail() {
     const channel = supabase
       .channel(`student-messages-${id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'student_messages', filter: `student_id=eq.${id}` },
-        (payload) => {
+        async (payload) => {
           setStudentMessages(prev => [payload.new, ...prev])
+          // Re-fetch steps to get latest status + student_note from portal
+          const { data } = await supabase.from('student_steps').select('*').eq('student_id', id).order('step_number')
+          if (data) setSteps(data)
         }
       )
       .subscribe()
