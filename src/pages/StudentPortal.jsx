@@ -218,7 +218,7 @@ export default function StudentPortal() {
                       <select
                         value={form.status}
                         onChange={e => patchForm(step.number, { status: e.target.value })}
-                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/25 appearance-none"
+                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:border-white/25 appearance-none"
                       >
                         {STATUS_OPTIONS.map(opt => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -234,7 +234,7 @@ export default function StudentPortal() {
                         onChange={e => patchForm(step.number, { note: e.target.value })}
                         placeholder="Notes sur cette étape..."
                         rows={3}
-                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/25 resize-none"
+                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2.5 text-base sm:text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/25 resize-none"
                       />
                     </div>
 
@@ -242,11 +242,11 @@ export default function StudentPortal() {
                     <div>
                       <label className="block text-xs font-medium text-zinc-400 mb-1.5">Lien ressource</label>
                       <input
-                        type="url"
+                        type="text"
                         value={form.link}
                         onChange={e => patchForm(step.number, { link: e.target.value })}
                         placeholder="https://..."
-                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/25"
+                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2.5 text-base sm:text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/25"
                       />
                     </div>
 
@@ -294,7 +294,7 @@ export default function StudentPortal() {
                 placeholder="Une question, une suggestion, un retour sur ton expérience..."
                 rows={4}
                 required
-                className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/25 resize-none"
+                className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-2.5 text-base sm:text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/25 resize-none"
               />
               <div className="flex justify-end">
                 <button
