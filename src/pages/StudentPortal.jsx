@@ -77,7 +77,9 @@ export default function StudentPortal() {
     e.preventDefault()
     setSaving(s => ({ ...s, [stepNum]: true }))
     const form = getForm(stepNum)
+    const stepName = STEPS.find(s => s.number === stepNum)?.name ?? `Étape ${stepNum}`
 
+    // Mettre à jour le statut / note / lien dans student_steps
     await supabase.rpc('portal_save_step', {
       p_token: token,
       p_step_number: stepNum,
@@ -86,7 +88,18 @@ export default function StudentPortal() {
       p_link_url: form.link || null,
     })
 
-    // Update local step status
+    // Envoyer un message au coach pour qu'il voie la mise à jour
+    const msgType = form.status === 'blocked' ? 'block' : form.status === 'validated' ? 'feedback' : 'update'
+    const noteText = form.note.trim() || `Statut mis à jour : ${STATUS_BADGE[form.status]?.label ?? form.status}`
+    await supabase.rpc('portal_add_message', {
+      p_token: token,
+      p_message: noteText,
+      p_type: msgType,
+      p_step_number: stepNum,
+      p_link_url: form.link || null,
+    })
+
+    // Mettre à jour l'état local
     setData(prev => ({
       ...prev,
       steps: prev.steps.map(s => s.step_number === stepNum
