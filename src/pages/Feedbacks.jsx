@@ -163,7 +163,7 @@ export default function Feedbacks() {
                     {/* Avatar */}
                     <div className="w-8 h-8 rounded-full bg-brand-red/20 flex items-center justify-center shrink-0 mt-0.5">
                       <span className="text-[10px] font-bold text-brand-red">
-                        {student ? `${student.first_name[0]}${student.last_name[0]}` : '?'}
+                        {student ? student.first_name[0] : '?'}
                       </span>
                     </div>
 
