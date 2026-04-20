@@ -280,13 +280,22 @@ export default function Dashboard() {
                 <div className="border-t border-amber-900/30 px-4 pb-4 pt-3 space-y-2">
                   <p className="text-xs text-zinc-600 mb-2">Aucune mise à jour depuis plus de 7 jours</p>
                   {inactiveStudents.map(s => (
-                    <Link key={s.id} to={`/students/${s.id}`} className="flex items-center justify-between group">
-                      <div>
+                    <div key={s.id} className="flex items-center justify-between group">
+                      <Link to={`/students/${s.id}`} className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors">{s.first_name} {s.last_name}</p>
                         <p className="text-xs text-zinc-500">{formatDistanceToNow(new Date(s.last_updated_at), { locale: fr, addSuffix: true })}</p>
-                      </div>
-                      <ArrowRight size={13} className="text-zinc-600 group-hover:text-amber-400 transition-colors" />
-                    </Link>
+                      </Link>
+                      <button
+                        onClick={async e => {
+                          e.preventDefault()
+                          await supabase.from('students').update({ student_status: 'actif' }).eq('id', s.id)
+                          setStudents(prev => prev.map(st => st.id === s.id ? { ...st, student_status: 'actif' } : st))
+                        }}
+                        className="ml-3 px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-colors shrink-0"
+                      >
+                        Actif
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
