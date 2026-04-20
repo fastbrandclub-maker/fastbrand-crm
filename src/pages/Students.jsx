@@ -60,7 +60,7 @@ export default function Students() {
     loadStudents()
     const interval = setInterval(loadStudents, 30000)
     return () => clearInterval(interval)
-  }, [profile])
+  }, [profile, seeAll])
 
   function getCurrentStep(steps) {
     const inProgress = steps?.find(s => s.status === 'in_progress')
