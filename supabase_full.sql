@@ -85,11 +85,12 @@ CREATE TABLE IF NOT EXISTS student_messages (
   message TEXT NOT NULL,
   type TEXT DEFAULT 'update',
   link_url TEXT,
+  link_url_2 TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   read_by_coach BOOLEAN DEFAULT FALSE
 );
 
--- Colonnes supplémentaires
+-- Colonnes supplémentaires (idempotent)
 ALTER TABLE students ALTER COLUMN email DROP NOT NULL;
 ALTER TABLE students DROP CONSTRAINT IF EXISTS students_email_key;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT;
@@ -102,6 +103,7 @@ ALTER TABLE students ADD COLUMN IF NOT EXISTS montant_restant INTEGER DEFAULT 0;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS student_token UUID DEFAULT gen_random_uuid();
 ALTER TABLE student_steps ADD COLUMN IF NOT EXISTS student_note TEXT;
 ALTER TABLE student_messages ADD COLUMN IF NOT EXISTS link_url TEXT;
+ALTER TABLE student_messages ADD COLUMN IF NOT EXISTS link_url_2 TEXT;
 ALTER TABLE compta_entries ADD COLUMN IF NOT EXISTS paye_closer BOOLEAN DEFAULT FALSE;
 ALTER TABLE compta_entries ADD COLUMN IF NOT EXISTS paye_coach BOOLEAN DEFAULT FALSE;
 ALTER TABLE compta_entries ADD COLUMN IF NOT EXISTS frais_coach NUMERIC;
@@ -138,7 +140,8 @@ CREATE POLICY "student_messages_all" ON student_messages FOR ALL USING (true) WI
 -- Triggers
 CREATE OR REPLACE FUNCTION create_student_steps()
 RETURNS TRIGGER AS $$
-DECLARE i INTEGER;
+DECLARE
+  i INTEGER;
 BEGIN
   FOR i IN 1..9 LOOP
     INSERT INTO student_steps (student_id, step_number, status) VALUES (NEW.id, i, 'todo');
@@ -161,10 +164,43 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ============================================================
 -- Fonctions portail élève
-CREATE OR REPLACE FUNCTION get_portal_data(p_token uuid)
+-- DROP en premier pour éviter tout conflit de signature
+-- ============================================================
+
+DROP FUNCTION IF EXISTS portal_add_message(uuid, text, text, integer, text);
+DROP FUNCTION IF EXISTS portal_add_message(uuid, text, text, integer, text, text);
+DROP FUNCTION IF EXISTS get_portal_data(uuid);
+DROP FUNCTION IF EXISTS portal_save_step(uuid, integer, text, text, text);
+DROP FUNCTION IF EXISTS portal_update_step_status(uuid, integer, text);
+DROP FUNCTION IF EXISTS mark_messages_read(uuid);
+
+CREATE FUNCTION portal_add_message(
+  p_token uuid,
+  p_message text,
+  p_type text DEFAULT 'update',
+  p_step_number integer DEFAULT NULL,
+  p_link_url text DEFAULT NULL,
+  p_link_url_2 text DEFAULT NULL
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_student_id uuid;
+BEGIN
+  SELECT id INTO v_student_id FROM students WHERE student_token = p_token;
+  IF v_student_id IS NULL THEN RETURN false; END IF;
+  INSERT INTO student_messages (student_id, step_number, message, type, link_url, link_url_2)
+  VALUES (v_student_id, p_step_number, p_message, p_type, NULLIF(p_link_url, ''), NULLIF(p_link_url_2, ''));
+  UPDATE students SET last_updated_at = now() WHERE id = v_student_id;
+  RETURN true;
+END;
+$$;
+
+CREATE FUNCTION get_portal_data(p_token uuid)
 RETURNS json LANGUAGE plpgsql SECURITY DEFINER AS $$
-DECLARE v_student_id uuid; result json;
+DECLARE
+  v_student_id uuid;
+  result json;
 BEGIN
   SELECT id INTO v_student_id FROM students WHERE student_token = p_token;
   IF v_student_id IS NULL THEN RETURN NULL; END IF;
@@ -174,26 +210,53 @@ BEGIN
     'messages', (SELECT json_agg(m) FROM (SELECT * FROM student_messages WHERE student_id = v_student_id ORDER BY created_at DESC LIMIT 20) m)
   ) INTO result;
   RETURN result;
-END;$$;
+END;
+$$;
 
-CREATE OR REPLACE FUNCTION portal_add_message(p_token uuid, p_message text, p_type text DEFAULT 'update', p_step_number integer DEFAULT NULL, p_link_url text DEFAULT NULL)
-RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER AS $$
-DECLARE v_student_id uuid;
+CREATE FUNCTION portal_save_step(
+  p_token uuid,
+  p_step_number integer,
+  p_status text,
+  p_student_note text DEFAULT NULL,
+  p_link_url text DEFAULT NULL
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_student_id uuid;
 BEGIN
   SELECT id INTO v_student_id FROM students WHERE student_token = p_token;
   IF v_student_id IS NULL THEN RETURN false; END IF;
-  INSERT INTO student_messages (student_id, step_number, message, type, link_url)
-  VALUES (v_student_id, p_step_number, p_message, p_type, p_link_url);
+  UPDATE student_steps
+    SET status = p_status, student_note = p_student_note, resource_link = p_link_url, updated_at = now()
+    WHERE student_id = v_student_id AND step_number = p_step_number;
   UPDATE students SET last_updated_at = now() WHERE id = v_student_id;
   RETURN true;
-END;$$;
+END;
+$$;
 
-CREATE OR REPLACE FUNCTION mark_messages_read(p_student_id uuid)
+CREATE FUNCTION portal_update_step_status(
+  p_token uuid,
+  p_step_number integer,
+  p_status text
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_student_id uuid;
+BEGIN
+  SELECT id INTO v_student_id FROM students WHERE student_token = p_token;
+  IF v_student_id IS NULL THEN RETURN false; END IF;
+  UPDATE student_steps SET status = p_status, updated_at = now()
+    WHERE student_id = v_student_id AND step_number = p_step_number;
+  UPDATE students SET last_updated_at = now() WHERE id = v_student_id;
+  RETURN true;
+END;
+$$;
+
+CREATE FUNCTION mark_messages_read(p_student_id uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   UPDATE student_messages SET read_by_coach = true
-  WHERE student_id = p_student_id AND read_by_coach = false;
-END;$$;
+    WHERE student_id = p_student_id AND read_by_coach = false;
+END;
+$$;
 
 -- Admins
 UPDATE profiles SET role = 'admin' WHERE email = 'lilian.lapie311@gmail.com';
