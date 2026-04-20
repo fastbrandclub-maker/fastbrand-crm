@@ -96,7 +96,7 @@ export default function Dashboard() {
   )
 
   const blockedStudents = students.filter(hasBlocked)
-  const inactiveStudents = students.filter(s => isInactive(s) && !hasBlocked(s))
+  const inactiveStudents = students.filter(s => isInactive(s) && !hasBlocked(s) && s.student_status !== 'inactif' && s.student_status !== 'disparu')
   const manualInactif = students.filter(s => s.student_status === 'inactif')
   const manualDisparu = students.filter(s => s.student_status === 'disparu')
   const litigeStudents = students.filter(s => s.has_litige)
