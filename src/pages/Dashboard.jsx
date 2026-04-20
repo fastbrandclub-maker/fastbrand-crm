@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, AlertTriangle, Clock, CheckCircle, ArrowRight, Phone, MessageSquare, CalendarDays, ShieldAlert, Timer, Trash2 } from 'lucide-react'
+import { Users, AlertTriangle, Clock, CheckCircle, ArrowRight, Phone, MessageSquare, CalendarDays, ShieldAlert, Timer, Trash2, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { STEPS, INACTIVITY_DAYS, TEAM } from '../lib/constants'
@@ -88,6 +88,8 @@ export default function Dashboard() {
   function hasBlocked(student) {
     return student.student_steps?.some(s => s.status === 'blocked')
   }
+
+  const [inactiveOpen, setInactiveOpen] = useState(false)
 
   const [dismissedExpired, setDismissedExpired] = useState(
     () => new Set(JSON.parse(localStorage.getItem('dismissedExpired') ?? '[]'))
@@ -260,23 +262,32 @@ export default function Dashboard() {
           )}
 
           {inactiveStudents.length > 0 && (
-            <div className="bg-brand-surface border border-amber-900/40 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock size={13} className="text-amber-400" />
-                <p className="text-sm font-semibold text-white">Inactifs +7j</p>
-              </div>
-              <p className="text-xs text-zinc-600 mb-3">Aucune mise à jour depuis plus de 7 jours</p>
-              <div className="space-y-2">
-                {inactiveStudents.map(s => (
-                  <Link key={s.id} to={`/students/${s.id}`} className="flex items-center justify-between group">
-                    <div>
-                      <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors">{s.first_name} {s.last_name}</p>
-                      <p className="text-xs text-zinc-500">{formatDistanceToNow(new Date(s.last_updated_at), { locale: fr, addSuffix: true })}</p>
-                    </div>
-                    <ArrowRight size={13} className="text-zinc-600 group-hover:text-amber-400 transition-colors" />
-                  </Link>
-                ))}
-              </div>
+            <div className="bg-brand-surface border border-amber-900/40 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setInactiveOpen(o => !o)}
+                className="w-full flex items-center justify-between gap-2 p-4 text-left hover:bg-white/3 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Clock size={13} className="text-amber-400" />
+                  <p className="text-sm font-semibold text-white">Inactifs +7j</p>
+                  <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-full">{inactiveStudents.length}</span>
+                </div>
+                <ChevronDown size={14} className={`text-zinc-500 transition-transform ${inactiveOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {inactiveOpen && (
+                <div className="border-t border-amber-900/30 px-4 pb-4 pt-3 space-y-2">
+                  <p className="text-xs text-zinc-600 mb-2">Aucune mise à jour depuis plus de 7 jours</p>
+                  {inactiveStudents.map(s => (
+                    <Link key={s.id} to={`/students/${s.id}`} className="flex items-center justify-between group">
+                      <div>
+                        <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors">{s.first_name} {s.last_name}</p>
+                        <p className="text-xs text-zinc-500">{formatDistanceToNow(new Date(s.last_updated_at), { locale: fr, addSuffix: true })}</p>
+                      </div>
+                      <ArrowRight size={13} className="text-zinc-600 group-hover:text-amber-400 transition-colors" />
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
