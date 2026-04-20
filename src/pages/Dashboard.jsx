@@ -97,6 +97,8 @@ export default function Dashboard() {
 
   const blockedStudents = students.filter(hasBlocked)
   const inactiveStudents = students.filter(s => isInactive(s) && !hasBlocked(s))
+  const manualInactif = students.filter(s => s.student_status === 'inactif')
+  const manualDisparu = students.filter(s => s.student_status === 'disparu')
   const litigeStudents = students.filter(s => s.has_litige)
   const callsThisWeek = calls.filter(c => isThisWeek(new Date(c.call_date), { weekStartsOn: 1 }))
   const expiredStudents = students.filter(s => {
@@ -288,6 +290,38 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {manualDisparu.length > 0 && (
+            <div className="bg-brand-surface border border-red-900/40 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-bold text-red-400 uppercase tracking-wider">👻 Disparus ({manualDisparu.length})</span>
+              </div>
+              <div className="space-y-2">
+                {manualDisparu.map(s => (
+                  <Link key={s.id} to={`/students/${s.id}`} className="flex items-center justify-between group">
+                    <p className="text-sm font-medium text-white group-hover:text-red-400 transition-colors">{s.first_name} {s.last_name}</p>
+                    <ArrowRight size={13} className="text-zinc-600 group-hover:text-red-400 transition-colors" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {manualInactif.length > 0 && (
+            <div className="bg-brand-surface border border-amber-900/40 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">💤 Inactifs ({manualInactif.length})</span>
+              </div>
+              <div className="space-y-2">
+                {manualInactif.map(s => (
+                  <Link key={s.id} to={`/students/${s.id}`} className="flex items-center justify-between group">
+                    <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors">{s.first_name} {s.last_name}</p>
+                    <ArrowRight size={13} className="text-zinc-600 group-hover:text-amber-400 transition-colors" />
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
 

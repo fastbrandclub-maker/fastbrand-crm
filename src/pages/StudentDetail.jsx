@@ -139,6 +139,11 @@ export default function StudentDetail() {
     })
   }
 
+  async function handleStatusChange(status) {
+    await supabase.from('students').update({ student_status: status }).eq('id', id)
+    setStudent(prev => ({ ...prev, student_status: status }))
+  }
+
   function handleStepUpdate(updated) {
     setSteps(prev => prev.map(s =>
       s.step_number === updated.step_number ? updated : s
@@ -256,6 +261,28 @@ export default function StudentDetail() {
             )}
           </div>
         </div>
+
+        {/* Statut manuel */}
+        {isCoach && (
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-xs text-zinc-500">Statut :</span>
+            {[
+              { value: 'actif',    label: 'Actif',    active: 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400', inactive: 'bg-white/5 border-white/10 text-zinc-500' },
+              { value: 'inactif',  label: 'Inactif',  active: 'bg-amber-500/20 border-amber-500/50 text-amber-400',    inactive: 'bg-white/5 border-white/10 text-zinc-500' },
+              { value: 'disparu',  label: 'Disparu',  active: 'bg-red-500/20 border-red-500/50 text-red-400',          inactive: 'bg-white/5 border-white/10 text-zinc-500' },
+            ].map(s => (
+              <button
+                key={s.value}
+                onClick={() => handleStatusChange(s.value)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                  (student.student_status ?? 'actif') === s.value ? s.active : s.inactive
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Meta */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-brand-border">

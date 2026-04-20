@@ -226,6 +226,12 @@ export default function Students() {
                       <p className="text-sm font-semibold text-white group-hover:text-brand-red transition-colors">
                         {student.first_name} {student.last_name}
                       </p>
+                      {student.student_status === 'inactif' && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">Inactif</span>
+                      )}
+                      {student.student_status === 'disparu' && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30">Disparu</span>
+                      )}
                       {blocked && (
                         <span className="inline-flex items-center gap-1 text-xs text-brand-red">
                           <AlertTriangle size={10} />
