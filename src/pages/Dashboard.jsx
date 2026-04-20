@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, AlertTriangle, Clock, CheckCircle, ArrowRight, Phone, MessageSquare, CalendarDays, ShieldAlert, Timer } from 'lucide-react'
+import { Users, AlertTriangle, Clock, CheckCircle, ArrowRight, Phone, MessageSquare, CalendarDays, ShieldAlert, Timer, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { STEPS, INACTIVITY_DAYS, TEAM } from '../lib/constants'
@@ -50,8 +50,8 @@ export default function Dashboard() {
       if (!isAdmin) callsQuery.eq('coach_id', profile?.id)
 
       const feedbacksQuery = supabase
-        .from('improvement_notes')
-        .select('*, students(first_name, last_name, id), profiles:author_id(full_name)')
+        .from('student_messages')
+        .select('*, students(first_name, last_name, id)')
         .order('created_at', { ascending: false })
         .limit(6)
 
@@ -106,6 +106,11 @@ export default function Dashboard() {
     const next = new Set([...dismissedExpired, id])
     setDismissedExpired(next)
     localStorage.setItem('dismissedExpired', JSON.stringify([...next]))
+  }
+
+  async function deleteFeedback(id) {
+    await supabase.from('student_messages').delete().eq('id', id)
+    setFeedbacks(prev => prev.filter(f => f.id !== id))
   }
 
   async function resolveLitige(student) {
@@ -288,27 +293,38 @@ export default function Dashboard() {
         {/* Feedbacks + Calls */}
         <div className="space-y-3">
           <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquare size={13} className="text-blue-400" />
-              <p className="text-sm font-semibold text-white">Feedbacks récents</p>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare size={13} className="text-blue-400" />
+                <p className="text-sm font-semibold text-white">Feedbacks récents</p>
+                {feedbacks.filter(f => !f.read_by_coach).length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-red text-white">
+                    {feedbacks.filter(f => !f.read_by_coach).length}
+                  </span>
+                )}
+              </div>
             </div>
             {feedbacks.length === 0 ? (
               <p className="text-xs text-zinc-500">Aucun feedback enregistré.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {feedbacks.map(fb => (
-                  <Link key={fb.id} to={`/students/${fb.students?.id}`} className="block group">
-                    <div className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-white group-hover:text-brand-red transition-colors">
-                          {fb.students?.first_name} {fb.students?.last_name}
-                          {fb.step_number && <span className="text-zinc-500 font-normal"> · Étape {fb.step_number}</span>}
-                        </p>
-                        <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5">{fb.note}</p>
-                      </div>
-                    </div>
-                  </Link>
+                  <div key={fb.id} className="flex items-start gap-2 group">
+                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${!fb.read_by_coach ? 'bg-brand-red' : 'bg-zinc-600'}`} />
+                    <Link to={`/students/${fb.students?.id}`} className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-white hover:text-brand-red transition-colors">
+                        {fb.students?.first_name} {fb.students?.last_name}
+                        {fb.step_number && <span className="text-zinc-500 font-normal"> · Étape {fb.step_number}</span>}
+                      </p>
+                      <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5">{fb.message}</p>
+                    </Link>
+                    <button
+                      onClick={() => deleteFeedback(fb.id)}
+                      className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-red-400 hover:bg-red-950/30 transition-all shrink-0"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
