@@ -25,7 +25,7 @@ function StatCard({ icon: Icon, label, value, color = 'text-white' }) {
 }
 
 export default function Dashboard() {
-  const { profile, isAdmin } = useAuth()
+  const { profile, isAdmin, seeAll } = useAuth()
   const [students, setStudents] = useState([])
   const [calls, setCalls] = useState([])
   const [feedbacks, setFeedbacks] = useState([])
@@ -40,14 +40,14 @@ export default function Dashboard() {
         .from('students')
         .select('*, student_steps(*), profiles:coach_id(full_name)')
         .order('created_at', { ascending: false })
-      if (!isAdmin) studentsQuery.eq('coach_id', profile?.id)
+      if (!seeAll) studentsQuery.eq('coach_id', profile?.id)
 
       const callsQuery = supabase
         .from('calls')
         .select('*, students(first_name, last_name, id)')
         .order('call_date', { ascending: false })
         .limit(5)
-      if (!isAdmin) callsQuery.eq('coach_id', profile?.id)
+      if (!seeAll) callsQuery.eq('coach_id', profile?.id)
 
       const feedbacksQuery = supabase
         .from('student_messages')
@@ -73,7 +73,7 @@ export default function Dashboard() {
     load()
     const interval = setInterval(load, 30000)
     return () => clearInterval(interval)
-  }, [profile, isAdmin])
+  }, [profile, seeAll])
 
   function getCurrentStep(steps) {
     const inProgress = steps?.find(s => s.status === 'in_progress')

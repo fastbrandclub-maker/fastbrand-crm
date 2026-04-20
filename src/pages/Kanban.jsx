@@ -82,7 +82,7 @@ function KanbanColumn({ step, students }) {
 }
 
 export default function Kanban() {
-  const { profile, isAdmin } = useAuth()
+  const { profile, seeAll } = useAuth()
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -93,7 +93,7 @@ export default function Kanban() {
         .select('*, student_steps(*), profiles:coach_id(full_name)')
         .order('created_at', { ascending: false })
 
-      if (!isAdmin) query.eq('coach_id', profile?.id)
+      if (!seeAll) query.eq('coach_id', profile?.id)
 
       const { data } = await query
       setStudents(data ?? [])
@@ -103,7 +103,7 @@ export default function Kanban() {
     load()
     const interval = setInterval(load, 30000)
     return () => clearInterval(interval)
-  }, [profile, isAdmin])
+  }, [profile, seeAll])
 
   function getCurrentStep(steps) {
     const inProgress = steps?.find(s => s.status === 'in_progress')

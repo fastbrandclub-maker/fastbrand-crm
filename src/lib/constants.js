@@ -39,6 +39,7 @@ export const STEP_STATUS = {
 
 export const ROLES = {
   admin: 'Admin',
+  manager: 'Manager',
   coach: 'Coach',
   assistant: 'Assistant',
 }

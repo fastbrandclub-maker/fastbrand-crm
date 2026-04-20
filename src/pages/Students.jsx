@@ -32,7 +32,7 @@ import { differenceInDays, format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 export default function Students() {
-  const { profile, isAdmin, isCoach, isReadOnly } = useAuth()
+  const { profile, isAdmin, isCoach, isReadOnly, seeAll } = useAuth()
   const [students, setStudents] = useState([])
   const [search, setSearch] = useState('')
   const [filterOffre, setFilterOffre] = useState('all')
@@ -46,7 +46,7 @@ export default function Students() {
       .select('*, student_steps(*), profiles:coach_id(full_name)')
       .order('created_at', { ascending: false })
 
-    if (!isAdmin) {
+    if (!seeAll) {
       query.eq('coach_id', profile?.id)
     }
 
