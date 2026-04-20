@@ -181,9 +181,9 @@ export default function StudentPortal() {
               <p className="text-sm font-bold text-white">{student.first_name} {student.last_name}</p>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 <span className="text-[11px] font-semibold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">{offreLabel(student.offre)}</span>
-                {daysLeft !== null && (
-                  <span className={`text-[11px] font-medium ${daysLeft >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {daysLeft >= 0 ? `${daysLeft}j restants` : `Expiré ${Math.abs(daysLeft)}j`}
+                {daysLeft !== null && daysLeft >= 0 && (
+                  <span className="text-[11px] font-medium text-emerald-400">
+                    {daysLeft}j restants
                   </span>
                 )}
               </div>
