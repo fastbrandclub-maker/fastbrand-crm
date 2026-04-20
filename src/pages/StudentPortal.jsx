@@ -90,7 +90,7 @@ export default function StudentPortal() {
     })
 
     // Envoyer un message au coach pour qu'il voie la mise à jour
-    const msgType = form.status === 'blocked' ? 'block' : form.status === 'validated' ? 'feedback' : 'update'
+    const msgType = form.status === 'blocked' ? 'block' : 'update'
     const noteText = form.note.trim() || `Statut mis à jour : ${STATUS_BADGE[form.status]?.label ?? form.status}`
     await supabase.rpc('portal_add_message', {
       p_token: token,
