@@ -288,8 +288,9 @@ export default function Dashboard() {
                       <button
                         onClick={async e => {
                           e.preventDefault()
-                          await supabase.from('students').update({ student_status: 'actif' }).eq('id', s.id)
-                          setStudents(prev => prev.map(st => st.id === s.id ? { ...st, student_status: 'actif' } : st))
+                          const now = new Date().toISOString()
+                          await supabase.from('students').update({ last_updated_at: now }).eq('id', s.id)
+                          setStudents(prev => prev.map(st => st.id === s.id ? { ...st, last_updated_at: now } : st))
                         }}
                         className="ml-3 px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-colors shrink-0"
                       >
