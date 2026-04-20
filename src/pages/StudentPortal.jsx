@@ -33,11 +33,9 @@ export default function StudentPortal() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [expandedStep, setExpandedStep] = useState(null)
-  const [forms, setForms] = useState({}) // { [stepNum]: { status, note, link } }
+  const [forms, setForms] = useState({})
   const [saving, setSaving] = useState({})
   const [saved, setSaved] = useState({})
-
-  // Feedback général
   const [generalMsg, setGeneralMsg] = useState('')
   const [sendingGeneral, setSendingGeneral] = useState(false)
   const [sentGeneral, setSentGeneral] = useState(false)
@@ -48,7 +46,6 @@ export default function StudentPortal() {
       const { data: result } = await supabase.rpc('get_portal_data', { p_token: token })
       if (!result) { setNotFound(true); setLoading(false); return }
       setData(result)
-      // Init forms from existing step data
       const init = {}
       ;(result.steps ?? []).forEach(s => {
         init[s.step_number] = {
@@ -59,7 +56,6 @@ export default function StudentPortal() {
       })
       setForms(init)
       setLoading(false)
-      // Auto-expand current step
       const current = result.steps?.find(s => s.status === 'in_progress') ?? result.steps?.find(s => s.status === 'todo')
       if (current) setExpandedStep(current.step_number)
     }
@@ -78,29 +74,29 @@ export default function StudentPortal() {
     e.preventDefault()
     setSaving(s => ({ ...s, [stepNum]: true }))
     const form = getForm(stepNum)
-    const stepName = STEPS.find(s => s.number === stepNum)?.name ?? `Étape ${stepNum}`
+    const studentId = data.student.id
 
-    // Mettre à jour le statut / note / lien dans student_steps
-    await supabase.rpc('portal_save_step', {
-      p_token: token,
-      p_step_number: stepNum,
-      p_status: form.status,
-      p_student_note: form.note || null,
-      p_link_url: form.link || null,
-    })
+    // Mise à jour directe dans student_steps (pas de RPC)
+    await supabase.from('student_steps').update({
+      status: form.status,
+      student_note: form.note || null,
+      resource_link: form.link || null,
+      updated_at: new Date().toISOString(),
+    }).eq('student_id', studentId).eq('step_number', stepNum)
 
-    // Envoyer un message au coach pour qu'il voie la mise à jour
-    const msgType = form.status === 'blocked' ? 'block' : 'update'
+    // Insertion directe dans student_messages
     const noteText = form.note.trim() || `Statut mis à jour : ${STATUS_BADGE[form.status]?.label ?? form.status}`
-    await supabase.rpc('portal_add_message', {
-      p_token: token,
-      p_message: noteText,
-      p_type: msgType,
-      p_step_number: stepNum,
-      p_link_url: form.link || null,
+    await supabase.from('student_messages').insert({
+      student_id: studentId,
+      step_number: stepNum,
+      message: noteText,
+      type: form.status === 'blocked' ? 'block' : 'update',
+      link_url: form.link || null,
     })
 
-    // Mettre à jour l'état local
+    // Mettre à jour last_updated_at
+    await supabase.from('students').update({ last_updated_at: new Date().toISOString() }).eq('id', studentId)
+
     setData(prev => ({
       ...prev,
       steps: prev.steps.map(s => s.step_number === stepNum
@@ -119,11 +115,14 @@ export default function StudentPortal() {
     if (!generalMsg.trim()) return
     setSendingGeneral(true)
     setErrorGeneral(false)
-    const { error } = await supabase.rpc('portal_add_message', {
-      p_token: token,
-      p_message: generalMsg.trim(),
-      p_type: 'feedback',
+
+    // Insertion directe dans student_messages (pas de RPC)
+    const { error } = await supabase.from('student_messages').insert({
+      student_id: data.student.id,
+      message: generalMsg.trim(),
+      type: 'feedback',
     })
+
     setSendingGeneral(false)
     if (error) { setErrorGeneral(true); return }
     setSentGeneral(true)
@@ -190,7 +189,6 @@ export default function StudentPortal() {
               </div>
             </div>
           </div>
-          {/* Progress bar */}
           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
             <div className="h-full bg-red-500 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
           </div>
@@ -209,7 +207,6 @@ export default function StudentPortal() {
 
             return (
               <div key={step.number} className={idx > 0 ? 'border-t border-white/5' : ''}>
-                {/* Row */}
                 <button
                   onClick={() => setExpandedStep(isExpanded ? null : step.number)}
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/3 transition-colors"
@@ -225,10 +222,8 @@ export default function StudentPortal() {
                   <ChevronRight size={14} className={`text-zinc-600 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                 </button>
 
-                {/* Expanded form */}
                 {isExpanded && (
                   <form onSubmit={e => handleSave(e, step.number)} className="border-t border-white/5 px-4 pb-4 pt-4 space-y-4 bg-white/2">
-                    {/* Statut */}
                     <div>
                       <label className="block text-xs font-medium text-zinc-400 mb-1.5">Statut</label>
                       <select
@@ -242,7 +237,6 @@ export default function StudentPortal() {
                       </select>
                     </div>
 
-                    {/* Notes */}
                     <div>
                       <label className="block text-xs font-medium text-zinc-400 mb-1.5">Notes</label>
                       <textarea
@@ -254,7 +248,6 @@ export default function StudentPortal() {
                       />
                     </div>
 
-                    {/* Lien ressource */}
                     <div>
                       <label className="block text-xs font-medium text-zinc-400 mb-1.5">Lien ressource</label>
                       <input
@@ -266,12 +259,10 @@ export default function StudentPortal() {
                       />
                     </div>
 
-                    {/* Sauvegarder */}
                     <div className="flex justify-end">
                       {saved[step.number] ? (
                         <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-medium">
-                          <CheckCircle2 size={15} />
-                          Sauvegardé !
+                          <CheckCircle2 size={15} />Sauvegardé !
                         </div>
                       ) : (
                         <button

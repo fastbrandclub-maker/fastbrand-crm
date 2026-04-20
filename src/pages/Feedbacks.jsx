@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { STEPS } from '../lib/constants'
-import { MessageSquare, AlertTriangle, HelpCircle, BarChart2, ExternalLink, Check, ChevronRight } from 'lucide-react'
+import { MessageSquare, AlertTriangle, HelpCircle, BarChart2, ExternalLink, Check, ChevronRight, Trash2 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -49,6 +49,11 @@ export default function Feedbacks() {
   async function markRead(id) {
     await supabase.from('student_messages').update({ read_by_coach: true }).eq('id', id)
     setMessages(prev => prev.map(m => m.id === id ? { ...m, read_by_coach: true } : m))
+  }
+
+  async function deleteMessage(id) {
+    await supabase.from('student_messages').delete().eq('id', id)
+    setMessages(prev => prev.filter(m => m.id !== id))
   }
 
   async function markAllRead() {
@@ -231,6 +236,13 @@ export default function Feedbacks() {
                     >
                       <ChevronRight size={13} />
                     </Link>
+                    <button
+                      onClick={() => deleteMessage(msg.id)}
+                      title="Supprimer"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-950/40 text-zinc-600 hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
               </div>
