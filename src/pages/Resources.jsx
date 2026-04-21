@@ -98,7 +98,8 @@ export default function Resources({ scope = 'general' }) {
     if (file && form.resource_type === 'file') {
       setUploading(true)
       const ext = file.name.split('.').pop()
-      const path = `${Date.now()}_${file.name.replace(/\s/g, '_')}`
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `${Date.now()}_${safeName}`
       const { error: uploadErr } = await supabase.storage.from('resource-files').upload(path, file, { upsert: true })
       if (uploadErr) {
         setError('Erreur upload PDF : ' + uploadErr.message)
