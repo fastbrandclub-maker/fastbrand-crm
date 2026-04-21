@@ -26,7 +26,7 @@ const CATEGORIES = [
 
 const EMPTY_FORM = { title: '', description: '', url: '', category: 'general', resource_type: 'link', content: '', file_url: '' }
 
-export default function Resources() {
+export default function Resources({ scope = 'general' }) {
   const { profile, isAdmin, isCoach } = useAuth()
   const [resources, setResources] = useState([])
   const [loading, setLoading] = useState(true)
@@ -46,6 +46,7 @@ export default function Resources() {
     const { data } = await supabase
       .from('resources')
       .select('*, profiles:author_id(full_name)')
+      .eq('scope', scope)
       .order('created_at', { ascending: false })
     setResources(data ?? [])
     setLoading(false)
@@ -55,7 +56,7 @@ export default function Resources() {
     loadResources()
     const interval = setInterval(loadResources, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [scope])
 
   function openAdd() {
     setForm(EMPTY_FORM)
@@ -119,7 +120,7 @@ export default function Resources() {
       if (err) { setError(err.message); return }
       setResources(prev => prev.map(r => r.id === editResource.id ? data : r))
     } else {
-      const { data, error: err } = await supabase.from('resources').insert({ ...payload, author_id: profile?.id }).select('*, profiles:author_id(full_name)').single()
+      const { data, error: err } = await supabase.from('resources').insert({ ...payload, author_id: profile?.id, scope }).select('*, profiles:author_id(full_name)').single()
       setSaving(false)
       if (err) { setError(err.message); return }
       setResources(prev => [data, ...prev])

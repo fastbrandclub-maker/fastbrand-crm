@@ -49,7 +49,7 @@ export default function Sales() {
         />
       ) : (
         <div className="flex-1 overflow-y-auto">
-          <Resources />
+          <Resources scope="sales" />
         </div>
       )}
     </div>
