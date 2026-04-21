@@ -26,7 +26,14 @@ const CATEGORIES = [
 
 const EMPTY_FORM = { title: '', description: '', url: '', category: 'general', resource_type: 'link', content: '', file_url: '' }
 
+const SALES_CATEGORIES = [
+  { value: 'paiement', label: 'Paiement' },
+  { value: 'follow_up', label: 'Follow up' },
+  { value: 'no_show', label: 'No show' },
+]
+
 export default function Resources({ scope = 'general' }) {
+  const categories = scope === 'sales' ? SALES_CATEGORIES : CATEGORIES
   const { profile, isAdmin, isCoach } = useAuth()
   const [resources, setResources] = useState([])
   const [loading, setLoading] = useState(true)
@@ -145,7 +152,7 @@ export default function Resources({ scope = 'general' }) {
     return matchSearch && matchCat
   })
 
-  const grouped = CATEGORIES.reduce((acc, cat) => {
+  const grouped = categories.reduce((acc, cat) => {
     const items = filtered.filter(r => r.category === cat.value)
     if (items.length > 0) acc[cat.value] = { label: cat.label, items }
     return acc
@@ -185,7 +192,7 @@ export default function Resources({ scope = 'general' }) {
           className="bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-600 w-full sm:w-auto"
         >
           <option value="all">Toutes les catégories</option>
-          {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
       </div>
 
@@ -268,7 +275,7 @@ export default function Resources({ scope = 'general' }) {
               onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
               className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-600"
             >
-              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
 
