@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Plus, ExternalLink, Trash2, Search, BookOpen, Link as LinkIcon, FileText, Edit2, Upload, File, X, Eye } from 'lucide-react'
+import { Plus, ExternalLink, Trash2, Search, BookOpen, Link as LinkIcon, FileText, Edit2, Upload, File, X, Eye, Copy, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/ui/Button'
@@ -372,6 +372,7 @@ export default function Resources() {
 
 function ResourceCard({ resource, onDelete, onEdit, onView, canEdit }) {
   const type = resource.resource_type ?? 'link'
+  const [copied, setCopied] = useState(false)
 
   const icon = type === 'page' ? <FileText size={13} className="text-brand-red" />
     : type === 'file' ? <File size={13} className="text-brand-red" />
@@ -384,6 +385,16 @@ function ResourceCard({ resource, onDelete, onEdit, onView, canEdit }) {
     if (type === 'page') { onView(resource); return }
     if (type === 'file' && resource.file_url) { window.open(resource.file_url, '_blank'); return }
     if (type === 'link' && resource.url) { window.open(resource.url, '_blank'); return }
+  }
+
+  function handleCopy(e) {
+    e.stopPropagation()
+    const text = type === 'page' ? (resource.content ?? '')
+      : type === 'file' ? (resource.file_url ?? '')
+      : (resource.url ?? '')
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -421,6 +432,13 @@ function ResourceCard({ resource, onDelete, onEdit, onView, canEdit }) {
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={handleCopy}
+            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all ${copied ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'bg-brand-surface border-brand-border text-zinc-500 hover:text-white hover:border-zinc-600'}`}
+            title="Copier"
+          >
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+          </button>
           {canEdit && (
             <button
               onClick={() => onEdit(resource)}
