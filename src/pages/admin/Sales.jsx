@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { ExternalLink, TrendingUp, BookOpen } from 'lucide-react'
+import { ExternalLink, TrendingUp, BookOpen, FileText } from 'lucide-react'
 import Resources from '../Resources'
+import ContractGenerator from './ContractGenerator'
 
 const CRM_URL = 'https://silly-begonia-5cb75f.netlify.app/'
 
@@ -26,6 +27,13 @@ export default function Sales() {
             <BookOpen size={14} />
             Ressources
           </button>
+          <button
+            onClick={() => setTab('contrat')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === 'contrat' ? 'bg-brand-surface text-white' : 'text-zinc-500 hover:text-white'}`}
+          >
+            <FileText size={14} />
+            Contrat
+          </button>
         </div>
         {tab === 'sales' && (
           <a
@@ -47,9 +55,13 @@ export default function Sales() {
           title="Sales CRM"
           allow="fullscreen"
         />
-      ) : (
+      ) : tab === 'resources' ? (
         <div className="flex-1 overflow-y-auto">
           <Resources scope="sales" />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-hidden">
+          <ContractGenerator />
         </div>
       )}
     </div>
