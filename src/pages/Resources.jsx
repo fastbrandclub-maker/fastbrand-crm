@@ -71,7 +71,7 @@ export default function Resources({ scope = 'general' }) {
   }, [scope])
 
   function openAdd() {
-    setForm(EMPTY_FORM)
+    setForm({ ...EMPTY_FORM, category: categories[0].value })
     setFile(null)
     setError('')
     setEditResource(null)
