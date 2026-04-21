@@ -135,7 +135,8 @@ export default function Resources({ scope = 'general' }) {
     } else {
       const { data, error: err } = await supabase.from('resources').insert({ ...payload, author_id: profile?.id, scope }).select('*, profiles:author_id(full_name)').single()
       setSaving(false)
-      if (err) { setError(err.message); return }
+      if (err) { setError('Erreur : ' + err.message); return }
+      if (!data) { setError('Erreur inconnue — vérifie la console Supabase'); return }
       setResources(prev => [data, ...prev])
     }
 
