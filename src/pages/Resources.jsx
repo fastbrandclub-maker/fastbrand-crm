@@ -50,11 +50,16 @@ export default function Resources({ scope = 'general' }) {
   const fileRef = useRef()
 
   async function loadResources() {
-    const { data } = await supabase
+    const query = supabase
       .from('resources')
       .select('*, profiles:author_id(full_name)')
-      .eq('scope', scope)
       .order('created_at', { ascending: false })
+    if (scope === 'sales') {
+      query.eq('scope', 'sales')
+    } else {
+      query.or('scope.eq.general,scope.is.null')
+    }
+    const { data } = await query
     setResources(data ?? [])
     setLoading(false)
   }
