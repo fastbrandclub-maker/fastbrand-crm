@@ -12,6 +12,7 @@ import Resources from './pages/Resources'
 import Compta from './pages/admin/Compta'
 import Sales from './pages/admin/Sales'
 import Contenu from './pages/admin/Contenu'
+import ContractGenerator from './pages/admin/ContractGenerator'
 import Feedbacks from './pages/Feedbacks'
 
 function ProtectedRoute({ children }) {
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="admin/compta" element={<Compta />} />
         <Route path="admin/sales" element={<Sales />} />
         <Route path="admin/contenu" element={<Contenu />} />
+        <Route path="admin/contrat" element={<ContractGenerator />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

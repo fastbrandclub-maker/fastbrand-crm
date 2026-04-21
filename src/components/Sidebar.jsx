@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Megaphone,
   MessageSquare,
+  FileText,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ROLES } from '../lib/constants'
@@ -30,6 +31,7 @@ const adminNav = [
   { to: '/admin/compta', icon: Receipt, label: 'Comptabilité' },
   { to: '/admin/sales', icon: TrendingUp, label: 'Sales' },
   { to: '/admin/contenu', icon: Megaphone, label: 'Contenu' },
+  { to: '/admin/contrat', icon: FileText, label: 'Contrat' },
 ]
 
 export default function Sidebar({ onClose }) {
