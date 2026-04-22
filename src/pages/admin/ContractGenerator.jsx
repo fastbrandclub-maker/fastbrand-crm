@@ -14,12 +14,6 @@ const OFFRES = [
     prix: 2500,
     prix_lettres: 'deux mille cinq cents euros (2 500 €)',
   },
-  {
-    value: 'premium',
-    label: 'Premium — 5 000 €',
-    prix: 5000,
-    prix_lettres: 'cinq mille euros (5 000 €)',
-  },
 ]
 
 function formatDate(dateStr) {
@@ -106,7 +100,7 @@ ${content}
   }
 
   function handleWhatsApp() {
-    const msg = `Bonjour ${form.prenom},\n\nVeuillez trouver ci-joint votre contrat d'accompagnement FastBrand Club Pro — Offre ${offre.label}.\n\nMerci de le lire attentivement dans son intégralité, puis de nous le retourner signé.\n\nÀ très vite,\nL'équipe FastBrand Club`
+    const msg = `Salut ${form.prenom}, c'est Ronaldo.\n\nJe t'envoie ton contrat FastBrand Club — ${offre.label}. Prends le temps de le lire, et reviens-moi si t'as des questions.\n\nQuand c'est bon pour toi, renvoie-le moi signé et on démarre.`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
