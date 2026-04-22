@@ -100,7 +100,7 @@ ${content}
   }
 
   function handleWhatsApp() {
-    const msg = `Salut ${form.prenom}, c'est Ronaldo.\n\nJe t'envoie ton contrat FastBrand Club — ${offre.label}. Prends le temps de le lire, et reviens-moi si t'as des questions.\n\nQuand c'est bon pour toi, renvoie-le moi signé et on démarre.`
+    const msg = `Hello ${form.prenom} !\n\nVoici ton contrat, n'hésite pas si t'as des questions. Quand c'est bon pour toi, renvoie-le moi signé.`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
