@@ -61,8 +61,12 @@ export default function ContractGenerator() {
     nom: '',
     prenom: '',
     offre: 'pro',
-    lieu: 'Miami',
     date: new Date().toISOString().split('T')[0],
+    paiement: 'comptant',
+    acompte: '',
+    e1: '',
+    e2: '',
+    e3: '',
   })
   const [generated, setGenerated] = useState(false)
   const contractRef = useRef()
@@ -151,17 +155,69 @@ ${content}
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Lieu de signature</label>
-            <input value={form.lieu} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))}
-              placeholder="Ville"
-              className="w-full bg-[#1a1a1a] border border-brand-border rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600" />
-          </div>
-
-          <div>
             <label className="block text-xs font-medium text-zinc-400 mb-1.5">Date de signature</label>
             <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
               className="w-full bg-[#1a1a1a] border border-brand-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-600" />
           </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Modalités de paiement</label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                { v: 'comptant', l: 'Comptant' },
+                { v: 'acompte', l: 'Acompte' },
+                { v: '2x', l: '2 fois' },
+                { v: '3x', l: '3 fois' },
+              ].map(({ v, l }) => (
+                <button key={v} type="button" onClick={() => setForm(f => ({ ...f, paiement: v }))}
+                  className={`py-1.5 rounded-lg text-xs font-medium border transition-all ${form.paiement === v ? 'bg-brand-red/15 border-brand-red/50 text-brand-red' : 'bg-brand-surface border-brand-border text-zinc-400 hover:text-white'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {form.paiement === 'acompte' && (
+            <div className="space-y-2 p-3 bg-white/3 rounded-lg border border-brand-border">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Acompte versé (€)</label>
+                <input type="number" value={form.acompte} onChange={e => setForm(f => ({ ...f, acompte: e.target.value }))}
+                  placeholder="ex: 500"
+                  className="w-full bg-[#1a1a1a] border border-brand-border rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600" />
+              </div>
+              {form.acompte && (
+                <p className="text-xs text-zinc-500">Solde : <span className="text-white font-medium">{(offre.prix - Number(form.acompte)).toLocaleString('fr-FR')} €</span></p>
+              )}
+            </div>
+          )}
+
+          {form.paiement === '2x' && (
+            <div className="space-y-2 p-3 bg-white/3 rounded-lg border border-brand-border">
+              {['1ère échéance (€)', '2ème échéance (€)'].map((label, i) => (
+                <div key={i}>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">{label}</label>
+                  <input type="number" value={[form.e1, form.e2][i]}
+                    onChange={e => setForm(f => ({ ...f, [['e1','e2'][i]]: e.target.value }))}
+                    placeholder="ex: 1250"
+                    className="w-full bg-[#1a1a1a] border border-brand-border rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {form.paiement === '3x' && (
+            <div className="space-y-2 p-3 bg-white/3 rounded-lg border border-brand-border">
+              {['1ère échéance (€)', '2ème échéance (€)', '3ème échéance (€)'].map((label, i) => (
+                <div key={i}>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">{label}</label>
+                  <input type="number" value={[form.e1, form.e2, form.e3][i]}
+                    onChange={e => setForm(f => ({ ...f, [['e1','e2','e3'][i]]: e.target.value }))}
+                    placeholder="ex: 833"
+                    className="w-full bg-[#1a1a1a] border border-brand-border rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600" />
+                </div>
+              ))}
+            </div>
+          )}
 
           <button onClick={() => setGenerated(true)}
             className="w-full py-2.5 bg-brand-red hover:bg-red-600 text-white text-sm font-bold rounded-lg transition-colors mt-2">
@@ -333,7 +389,24 @@ ${content}
                   </div>
                   <p style={S.p}>Le Client reconnaît avoir souscrit à l'offre FastBrand Club Pro au prix total de <strong>{offre.prix_lettres}</strong> toutes taxes comprises.</p>
                   <p style={S.subTitle}>Modalités de paiement</p>
-                  <p style={S.p}>Les modalités de paiement — nombre d'échéances, montants et dates — sont définies d'un commun accord entre les Parties lors de la souscription. Elles font partie intégrante du présent Contrat au même titre que les autres dispositions.</p>
+                  {form.paiement === 'comptant' && (
+                    <p style={S.p}>Le règlement de la totalité du prix est effectué en une seule fois à la souscription.</p>
+                  )}
+                  {form.paiement === 'acompte' && (
+                    <p style={S.p}>
+                      Un acompte de <strong>{Number(form.acompte || 0).toLocaleString('fr-FR')} €</strong> est versé à la souscription. Le solde de <strong>{(offre.prix - Number(form.acompte || 0)).toLocaleString('fr-FR')} €</strong> sera réglé selon les modalités convenues entre les Parties. Elles font partie intégrante du présent Contrat.
+                    </p>
+                  )}
+                  {form.paiement === '2x' && (
+                    <p style={S.p}>
+                      Le paiement est effectué en <strong>2 versements</strong> : un premier versement de <strong>{Number(form.e1 || 0).toLocaleString('fr-FR')} €</strong> à la souscription, puis un second versement de <strong>{Number(form.e2 || 0).toLocaleString('fr-FR')} €</strong> selon l'échéancier convenu entre les Parties.
+                    </p>
+                  )}
+                  {form.paiement === '3x' && (
+                    <p style={S.p}>
+                      Le paiement est effectué en <strong>3 versements</strong> : <strong>{Number(form.e1 || 0).toLocaleString('fr-FR')} €</strong> à la souscription, puis <strong>{Number(form.e2 || 0).toLocaleString('fr-FR')} €</strong> et <strong>{Number(form.e3 || 0).toLocaleString('fr-FR')} €</strong> selon l'échéancier convenu entre les Parties.
+                    </p>
+                  )}
                   <p style={S.subTitle}>Défaut de paiement</p>
                   <p style={S.p}>Tout retard ou défaut de paiement à l'échéance convenue pourra entraîner la suspension immédiate de l'accès aux services et contenus du programme. Cette suspension ne saurait ouvrir droit à un remboursement, partiel ou total, des sommes déjà versées. Le solde restant dû demeure exigible dans son intégralité.</p>
                   <p style={S.subTitle}>Contestation de paiement</p>
@@ -406,7 +479,7 @@ ${content}
                 <div style={{ marginTop: '40px', paddingTop: '24px', borderTop: '2px solid #1a1a1a' }}>
                   <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '9pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>ACCEPTATION ET SIGNATURES</p>
                   <p style={{ fontSize: '9.5pt', color: '#555', lineHeight: '1.6', marginBottom: '20px', fontStyle: 'italic' }}>En signant le présent Contrat, les Parties reconnaissent l'avoir lu dans son intégralité, en avoir compris le contenu, et en accepter toutes les dispositions sans réserve.</p>
-                  <p style={{ marginBottom: '28px', fontSize: '10.5pt' }}>Fait à <strong>{form.lieu}</strong>, le <strong>{dateStr}</strong></p>
+                  <p style={{ marginBottom: '28px', fontSize: '10.5pt' }}>Le <strong>{dateStr}</strong></p>
 
                   <div style={{ display: 'flex', gap: '40px' }}>
                     <div style={{ flex: 1 }}>
