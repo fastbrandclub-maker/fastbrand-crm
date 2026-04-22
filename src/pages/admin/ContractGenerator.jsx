@@ -33,7 +33,7 @@ const S = {
   li: { marginBottom: '5px', lineHeight: '1.6', fontSize: '10.5pt' },
   ul: { paddingLeft: '20px', marginBottom: '10px' },
   articleTitle: {
-    fontFamily: 'Arial, sans-serif',
+    fontFamily: "'Inter', sans-serif",
     fontSize: '8.5pt',
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -43,7 +43,7 @@ const S = {
     paddingBottom: '5px',
     marginBottom: '10px',
   },
-  subTitle: { fontWeight: '700', fontFamily: 'Arial, sans-serif', fontSize: '9pt', marginBottom: '6px', marginTop: '10px' },
+  subTitle: { fontWeight: '700', fontFamily: "'Inter', sans-serif", fontSize: '9pt', marginBottom: '6px', marginTop: '10px' },
 }
 
 function Article({ num, title, children }) {
@@ -79,13 +79,17 @@ export default function ContractGenerator() {
 <head>
   <meta charset="UTF-8">
   <title>Contrat FastBrand Club — ${clientNom}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Georgia', serif; font-size: 10.5pt; color: #1a1a1a; background: white; }
+    body { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 10.5pt; color: #1a1a1a; background: white; }
     .page { max-width: 780px; margin: 0 auto; padding: 48px 56px; }
-    p { margin-bottom: 8px; line-height: 1.65; text-align: justify; font-size: 10.5pt; }
+    p { margin-bottom: 8px; line-height: 1.65; text-align: justify; font-size: 10.5pt; font-weight: 400; }
     ul { padding-left: 20px; margin-bottom: 10px; }
     li { margin-bottom: 5px; line-height: 1.6; font-size: 10.5pt; }
+    h1, h2, h3 { font-weight: 600; }
     @media print { body { padding: 0; } .page { padding: 32px 40px; } }
   </style>
 </head>
@@ -191,17 +195,17 @@ ${content}
         ) : (
           <div className="max-w-3xl mx-auto shadow-2xl rounded-sm">
             <div ref={contractRef}>
-              <div className="page" style={{ fontFamily: 'Georgia, serif', fontSize: '10.5pt', color: '#1a1a1a', background: 'white', padding: '48px 56px' }}>
+              <div className="page" style={{ fontFamily: "'Inter', sans-serif", fontSize: '10.5pt', color: '#1a1a1a', background: 'white', padding: '48px 56px' }}>
 
                 {/* HEADER */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: '20px', borderBottom: '3px solid #1a1a1a', marginBottom: '32px' }}>
                   <div>
-                    <div style={{ fontSize: '20pt', fontWeight: '900', fontFamily: 'Arial, sans-serif', letterSpacing: '-0.5px', color: '#1a1a1a', lineHeight: 1 }}>FASTBRAND CLUB</div>
-                    <div style={{ fontSize: '7.5pt', color: '#888', fontFamily: 'Arial, sans-serif', marginTop: '4px', letterSpacing: '2px', textTransform: 'uppercase' }}>par Amrani Consulting LLC</div>
+                    <div style={{ fontSize: '20pt', fontWeight: '600', fontFamily: "'Inter', sans-serif", letterSpacing: '-0.5px', color: '#1a1a1a', lineHeight: 1 }}>FASTBRAND CLUB</div>
+                    <div style={{ fontSize: '7.5pt', color: '#888', fontFamily: "'Inter', sans-serif", marginTop: '4px', letterSpacing: '2px', textTransform: 'uppercase' }}>par Amrani Consulting LLC</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '7pt', color: '#aaa', fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '5px' }}>Contrat d'accompagnement</div>
-                    <div style={{ display: 'inline-block', background: '#1a1a1a', color: 'white', fontSize: '8pt', fontFamily: 'Arial, sans-serif', fontWeight: '700', padding: '5px 12px', borderRadius: '3px', letterSpacing: '0.5px' }}>
+                    <div style={{ fontSize: '7pt', color: '#aaa', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '5px' }}>Contrat d'accompagnement</div>
+                    <div style={{ display: 'inline-block', background: '#1a1a1a', color: 'white', fontSize: '8pt', fontFamily: "'Inter', sans-serif", fontWeight: '700', padding: '5px 12px', borderRadius: '3px', letterSpacing: '0.5px' }}>
                       OFFRE {offre.label.toUpperCase()}
                     </div>
                   </div>
@@ -209,8 +213,8 @@ ${content}
 
                 {/* TITRE */}
                 <div style={{ marginBottom: '24px' }}>
-                  <h1 style={{ fontSize: '14pt', fontWeight: '700', fontFamily: 'Arial, sans-serif', color: '#1a1a1a', marginBottom: '4px' }}>CONTRAT D'ACCOMPAGNEMENT</h1>
-                  <p style={{ fontSize: '10pt', fontWeight: '400', fontFamily: 'Arial, sans-serif', color: '#666', margin: 0 }}>Création &amp; Développement de Marque E-Commerce – Programme FastBrand Club Pro</p>
+                  <h1 style={{ fontSize: '14pt', fontWeight: '600', fontFamily: "'Inter', sans-serif", color: '#1a1a1a', marginBottom: '4px' }}>CONTRAT D'ACCOMPAGNEMENT</h1>
+                  <p style={{ fontSize: '10pt', fontWeight: '400', fontFamily: "'Inter', sans-serif", color: '#666', margin: 0 }}>Création &amp; Développement de Marque E-Commerce – Programme FastBrand Club Pro</p>
                 </div>
 
                 {/* INTRO */}
@@ -221,12 +225,12 @@ ${content}
                 {/* PARTIES */}
                 <div style={{ display: 'flex', gap: '20px', marginBottom: '32px' }}>
                   <div style={{ flex: 1, border: '1px solid #ddd', borderRadius: '4px', padding: '14px 16px' }}>
-                    <div style={{ fontSize: '7pt', fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', fontWeight: '700', marginBottom: '8px' }}>Le Prestataire</div>
+                    <div style={{ fontSize: '7pt', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', fontWeight: '700', marginBottom: '8px' }}>Le Prestataire</div>
                     <div style={{ fontSize: '10.5pt', fontWeight: '700', marginBottom: '4px' }}>Amrani Consulting LLC</div>
                     <div style={{ fontSize: '9pt', color: '#555', lineHeight: '1.5' }}>Société enregistrée aux États-Unis<br />Représentée par Monsieur Selim Amrani<br />ci-après dénommée « le Prestataire »</div>
                   </div>
                   <div style={{ flex: 1, border: '1px solid #1a1a1a', borderRadius: '4px', padding: '14px 16px' }}>
-                    <div style={{ fontSize: '7pt', fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', fontWeight: '700', marginBottom: '8px' }}>Le Client</div>
+                    <div style={{ fontSize: '7pt', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', fontWeight: '700', marginBottom: '8px' }}>Le Client</div>
                     <div style={{ fontSize: '10.5pt', fontWeight: '700', marginBottom: '4px' }}>{clientNom || 'Madame / Monsieur ___________'}</div>
                     <div style={{ fontSize: '9pt', color: '#555', lineHeight: '1.5' }}>ci-après dénommé(e) « le Client »</div>
                   </div>
@@ -320,8 +324,8 @@ ${content}
                   <p style={S.subTitle}>Prix de l'offre</p>
                   <div style={{ border: '1px solid #1a1a1a', borderRadius: '4px', padding: '14px 18px', margin: '10px 0 14px', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <div style={{ fontSize: '7pt', fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', marginBottom: '4px' }}>Prix total TTC</div>
-                      <div style={{ fontSize: '20pt', fontWeight: '900', fontFamily: 'Arial, sans-serif', color: '#1a1a1a', lineHeight: 1 }}>{offre.prix.toLocaleString('fr-FR')} €</div>
+                      <div style={{ fontSize: '7pt', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', marginBottom: '4px' }}>Prix total TTC</div>
+                      <div style={{ fontSize: '20pt', fontWeight: '900', fontFamily: "'Inter', sans-serif", color: '#1a1a1a', lineHeight: 1 }}>{offre.prix.toLocaleString('fr-FR')} €</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '9pt', color: '#555', fontStyle: 'italic' }}>{offre.prix_lettres}</div>
@@ -400,20 +404,20 @@ ${content}
 
                 {/* SIGNATURES */}
                 <div style={{ marginTop: '40px', paddingTop: '24px', borderTop: '2px solid #1a1a1a' }}>
-                  <p style={{ fontFamily: 'Arial, sans-serif', fontSize: '9pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>ACCEPTATION ET SIGNATURES</p>
+                  <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '9pt', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>ACCEPTATION ET SIGNATURES</p>
                   <p style={{ fontSize: '9.5pt', color: '#555', lineHeight: '1.6', marginBottom: '20px', fontStyle: 'italic' }}>En signant le présent Contrat, les Parties reconnaissent l'avoir lu dans son intégralité, en avoir compris le contenu, et en accepter toutes les dispositions sans réserve.</p>
                   <p style={{ marginBottom: '28px', fontSize: '10.5pt' }}>Fait à <strong>{form.lieu}</strong>, le <strong>{dateStr}</strong></p>
 
                   <div style={{ display: 'flex', gap: '40px' }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '7pt', fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', fontWeight: '700', marginBottom: '6px' }}>Pour le Prestataire</div>
+                      <div style={{ fontSize: '7pt', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', fontWeight: '700', marginBottom: '6px' }}>Pour le Prestataire</div>
                       <div style={{ fontSize: '10.5pt', fontWeight: '700', marginBottom: '2px' }}>Amrani Consulting LLC</div>
                       <div style={{ fontSize: '9pt', color: '#555', marginBottom: '50px' }}>Représentée par Monsieur Selim Amrani</div>
                       <div style={{ borderBottom: '1px solid #1a1a1a' }} />
                       <div style={{ fontSize: '8pt', color: '#aaa', marginTop: '5px', fontStyle: 'italic' }}>Signature — Lu et approuvé</div>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '7pt', fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', fontWeight: '700', marginBottom: '6px' }}>Pour le Client</div>
+                      <div style={{ fontSize: '7pt', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', fontWeight: '700', marginBottom: '6px' }}>Pour le Client</div>
                       <div style={{ fontSize: '10.5pt', fontWeight: '700', marginBottom: '2px' }}>{clientNom || 'Madame / Monsieur ___________'}</div>
                       <div style={{ fontSize: '9pt', color: '#555', marginBottom: '50px' }}>&nbsp;</div>
                       <div style={{ borderBottom: '1px solid #1a1a1a' }} />
@@ -423,11 +427,11 @@ ${content}
 
                   {/* COORDONNÉES BANCAIRES */}
                   <div style={{ marginTop: '32px', border: '1px solid #ddd', borderRadius: '4px', padding: '14px 18px', background: '#fafafa' }}>
-                    <div style={{ fontSize: '7.5pt', fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', color: '#888', marginBottom: '10px' }}>Coordonnées bancaires pour virement</div>
+                    <div style={{ fontSize: '7.5pt', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', color: '#888', marginBottom: '10px' }}>Coordonnées bancaires pour virement</div>
                     <div style={{ display: 'flex', gap: '32px' }}>
                       <div>
                         <div style={{ fontSize: '7.5pt', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '2px' }}>Bénéficiaire</div>
-                        <div style={{ fontSize: '10pt', fontWeight: '700', fontFamily: 'Arial, sans-serif' }}>AMRANI CONSULTING LLC</div>
+                        <div style={{ fontSize: '10pt', fontWeight: '700', fontFamily: "'Inter', sans-serif" }}>AMRANI CONSULTING LLC</div>
                       </div>
                       <div>
                         <div style={{ fontSize: '7.5pt', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '2px' }}>IBAN</div>
@@ -436,7 +440,7 @@ ${content}
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '7.5pt', color: '#ccc', fontFamily: 'Arial, sans-serif', letterSpacing: '1px' }}>
+                  <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '7.5pt', color: '#ccc', fontFamily: "'Inter', sans-serif", letterSpacing: '1px' }}>
                     FASTBRAND CLUB — PAR AMRANI CONSULTING LLC — DOCUMENT CONFIDENTIEL
                   </div>
                 </div>
