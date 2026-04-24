@@ -328,7 +328,7 @@ async function syncCalendly(){
       if(allEvents.length>=2000)break;
     }
 
-    var newCount=0;
+    var newCount=0;var skipCount=0;
     var batchSize=8;
     for(var i=0;i<allEvents.length;i+=batchSize){
       var batch=allEvents.slice(i,i+batchSize);
@@ -345,9 +345,9 @@ async function syncCalendly(){
         var dateStr=p2(d.getDate())+"/"+p2(d.getMonth()+1)+"/"+d.getFullYear();
         (res.collection||[]).forEach(function(inv){
           var key=inv.email+dateStr;
-          if(deleted.indexOf(key)>=0)return;
+          if(deleted.indexOf(key)>=0){skipCount++;return;}
           for(var j=0;j<leads.length;j++){
-            if(leads[j].email===inv.email&&leads[j].date===dateStr)return;
+            if(leads[j].email===inv.email&&leads[j].date===dateStr){skipCount++;return;}
           }
           var lead={
             id:Date.now()+Math.random(),
@@ -372,7 +372,7 @@ async function syncCalendly(){
       });
     }
 
-    document.getElementById("lsync").textContent="Synchro: "+new Date().toLocaleTimeString("fr-FR");
+    document.getElementById("lsync").textContent=allEvents.length+" events Cal · +"+newCount+" leads · "+skipCount+" déjà présents — "+new Date().toLocaleTimeString("fr-FR");
     document.getElementById("ltxt").textContent="⚡ En direct";
 
     if(newCount>0){
