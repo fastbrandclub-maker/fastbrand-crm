@@ -740,12 +740,12 @@ function render(){
       '<td>'+(c3?'<select onchange="uf('+lead.id+',\'commPaid\',this.value===\'oui\')" style="font-size:10px;padding:2px 5px;background:#111;border:1px solid #2a2a2a;color:#e5e5e5"><option value="non" '+(lead.commPaid?"":"selected")+'>Non</option><option value="oui" '+(lead.commPaid?"selected":"")+'>Payée</option></select>':"—")+'</td>'+
       (function(){
         var tel=lead.tel?lead.tel.replace(/[^0-9+]/g,""):"";
-        var ronaldo="+33641016134".replace(/[^0-9+]/g,"");
-        var msgCloche=encodeURIComponent("Yoo Ronaldo, j'ai un RDV avec "+lead.nom+" le "+lead.date+" 🙏");
-        var msgNoShow=encodeURIComponent("Yoo Ronaldo, "+lead.nom+" m'a mis un no show, si tu peux le relancer stp 🙏");
-        var btns='<td style="white-space:nowrap;min-width:140px">';
-        btns+='<a href="https://wa.me/'+ronaldo+'?text='+msgCloche+'" target="_blank" title="Notifier Ronaldo" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:#221500;border:1px solid #f59e0b;margin-right:3px;text-decoration:none;font-size:14px">🔔</a>';
-        btns+='<a href="https://wa.me/'+ronaldo+'?text='+msgNoShow+'" target="_blank" onclick="uf('+lead.id+',\'statut\',\'noshow\')" title="No show" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:#2a0808;border:1px solid #7f1d1d;margin-right:3px;text-decoration:none;font-size:14px">📞̶</a>';
+        var prenom=(lead.nom||"").split(" ")[0];
+        var msgWa=encodeURIComponent("Salut "+prenom+" , tu vas bien ? Je suis Ronaldo, l'associé de Selim ! Tu as 3 min pour un échange rapide , pour confirmer ensemble quelques information avant ton rdv de demain ?");
+        var btns='<td style="white-space:nowrap;min-width:100px">';
+        if(tel){
+          btns+='<a href="https://wa.me/'+tel+'?text='+msgWa+'" target="_blank" title="Envoyer message WhatsApp au lead" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:#0a2a12;border:1px solid #25d366;margin-right:3px;text-decoration:none;font-size:15px">&#x1F4AC;</a>';
+        }
         btns+='<button class="ab" onclick="editL('+lead.id+')" style="margin-right:2px">Edit</button>';
         btns+='<button class="ab d" onclick="delL('+lead.id+')">Sup</button>';
         btns+='</td>';
