@@ -294,17 +294,11 @@ sbRead(function(raw){
 // Calendly API sync
 async function syncCalendly(){
   try{
-    var lastSync=localStorage.getItem("cal_last_sync");
-    var minTime;
-    if(!lastSync){
-      var d=new Date();d.setFullYear(d.getFullYear()-1);
-      minTime=d.toISOString();
-    }else{
-      minTime=lastSync;
-    }
+    var d2=new Date();d2.setFullYear(d2.getFullYear()-2);
+    var minTime=d2.toISOString();
 
     var allEvents=[];
-    var url="https://api.calendly.com/scheduled_events?user="+encodeURIComponent(CAL_USER)+"&count=100&min_start_time="+encodeURIComponent(minTime)+"&sort=start_time:asc";
+    var url="https://api.calendly.com/scheduled_events?user="+encodeURIComponent(CAL_USER)+"&count=100&min_start_time="+encodeURIComponent(minTime)+"&sort=start_time:desc";
     while(url){
       var r=await fetch(url,{headers:{Authorization:"Bearer "+CAL_TOKEN}});
       if(!r.ok)break;
