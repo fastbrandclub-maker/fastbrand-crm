@@ -250,13 +250,16 @@ function sbRead(cb){
 
 function sbWrite(){
   var payload=JSON.stringify({leads:leads,deleted:deleted});
+  var showErr=function(status){document.getElementById("lsync").textContent="Supabase erreur "+status;};
   if(sbId){
-    fetch(SB_URL+"?id=eq."+sbId,{method:"PATCH",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({data:payload})}).catch(function(){});
+    fetch(SB_URL+"?id=eq."+sbId,{method:"PATCH",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({data:payload})})
+      .then(function(r){if(!r.ok)showErr(r.status);})
+      .catch(function(e){showErr(e.message);});
   }else{
     fetch(SB_URL,{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({data:payload})})
-      .then(function(r){return r.json();})
+      .then(function(r){if(!r.ok){showErr(r.status);return null;}return r.json();})
       .then(function(rows){if(rows&&rows[0])sbId=rows[0].id;})
-      .catch(function(){});
+      .catch(function(e){showErr(e.message);});
   }
 }
 
@@ -265,24 +268,34 @@ function save(){
   sbWrite();render();
 }
 
-// Init
+// Init — merge localStorage + Supabase so local Calendly leads survive page reloads
 sbRead(function(raw){
   var remote=null;
   if(raw){try{remote=typeof raw==="string"?JSON.parse(raw):raw;}catch(e){}}
-  if(remote&&remote.leads&&remote.leads.length>0){
-    var rd=remote.deleted||[];
-    rd.forEach(function(d){if(deleted.indexOf(d)<0)deleted.push(d);});
-    leads=remote.leads.filter(function(l){return ok(l)&&deleted.indexOf(l.email+l.date)<0;});
-  }else{
-    var local=null;
-    try{var lr=localStorage.getItem("crm_local");if(lr)local=JSON.parse(lr);}catch(e){}
-    if(local&&local.leads&&local.leads.length>0){
-      leads=local.leads.filter(function(l){return ok(l)&&deleted.indexOf(l.email+l.date)<0;});
-    }else{
-      leads=[];
+  var local=null;
+  try{var lr=localStorage.getItem("crm_local");if(lr)local=JSON.parse(lr);}catch(e){}
+
+  // Collect deleted from both sources
+  var rd=(remote&&remote.deleted)||[];
+  var ld=(local&&local.deleted)||[];
+  rd.forEach(function(d){if(deleted.indexOf(d)<0)deleted.push(d);});
+  ld.forEach(function(d){if(deleted.indexOf(d)<0)deleted.push(d);});
+
+  // Start with remote leads as base
+  var base=(remote&&remote.leads&&remote.leads.length>0)?remote.leads:[];
+  // Merge local leads that aren't in remote (e.g. Calendly leads not yet saved to Supabase)
+  var localLeads=(local&&local.leads&&local.leads.length>0)?local.leads:[];
+  localLeads.forEach(function(ll){
+    if(deleted.indexOf(ll.email+ll.date)>=0)return;
+    for(var k=0;k<base.length;k++){
+      if(base[k].email===ll.email&&base[k].date===ll.date)return;
     }
-    sbWrite();
-  }
+    base.unshift(ll);
+  });
+
+  leads=base.filter(function(l){return ok(l)&&deleted.indexOf(l.email+l.date)<0;});
+  if(!remote||!remote.leads||!remote.leads.length)sbWrite();
+
   leads.forEach(function(l){
     l.closer=fixEnc(l.closer);
     if(l.email)ke[l.email]=1;
