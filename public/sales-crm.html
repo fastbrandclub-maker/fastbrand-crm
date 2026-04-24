@@ -144,6 +144,10 @@ select,input[type=text],input[type=date]{font-size:11px;padding:3px 6px;border:1
       <option value="2026-02">F&#233;vrier 2026</option><option value="2026-01">Janvier 2026</option>
       <option value="2025-12">D&#233;cembre 2025</option>
     </select>
+    &nbsp;<label>Jour:</label>
+    <button class="fp" onclick="navJour(-1)" title="Jour précédent" style="padding:3px 8px;font-size:13px">&#8249;</button>
+    <button class="fp on" id="btn-jour-tous" onclick="setJour('tous')" style="min-width:100px;font-size:11px" id="lbl-jour">Tous les jours</button>
+    <button class="fp" onclick="navJour(1)" title="Jour suivant" style="padding:3px 8px;font-size:13px">&#8250;</button>
   </div>
   <div class="tw"><div class="ts">
     <table><thead><tr>
@@ -190,7 +194,7 @@ var SBG={snap:"bam",tiktok:"bpk",insta:"bp",vsl:"btl",autre:"bgr"};
 
 var deleted=JSON.parse(localStorage.getItem("crm_del")||"[]");
 var leads=[];
-var fil={closer:"tous",statut:"tous",prov:"tous",mois:"tous"};
+var fil={closer:"tous",statut:"tous",prov:"tous",mois:"tous",jour:"tous"};
 var eid=null,amo=null,sbId=null;
 var ke={};
 
@@ -516,6 +520,39 @@ function sf(type,val,el){
   render();
 }
 
+function setJour(v){
+  fil.jour=v;
+  var btn=document.getElementById("btn-jour-tous");
+  if(v==="tous"){btn.textContent="Tous les jours";btn.classList.add("on");}
+  else{
+    var pts=v.split("/");
+    var jours=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+    var mois=["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
+    var d=new Date(parseInt(pts[2]),parseInt(pts[1])-1,parseInt(pts[0]));
+    btn.textContent=jours[d.getDay()]+" "+pts[0]+" "+mois[d.getMonth()];
+    btn.classList.remove("on");
+    btn.style.background="#E8000D22";btn.style.color="#E8000D";btn.style.borderColor="#E8000D";
+  }
+  if(v==="tous"){btn.style.background="";btn.style.color="";btn.style.borderColor="";}
+  render();
+}
+
+function navJour(delta){
+  // Collect all unique dates from leads
+  var dates=[];
+  leads.forEach(function(l){if(l.date&&dates.indexOf(l.date)<0)dates.push(l.date);});
+  dates.sort(function(a,b){return dn(b).localeCompare(dn(a));});
+  if(!dates.length)return;
+  if(fil.jour==="tous"){
+    setJour(delta>0?dates[dates.length-1]:dates[0]);return;
+  }
+  var idx=dates.indexOf(fil.jour);
+  if(idx<0){setJour(dates[0]);return;}
+  var next=idx+delta;
+  if(next<0||next>=dates.length){setJour("tous");return;}
+  setJour(dates[next]);
+}
+
 function sbd(v){var b=SBG[v]||"bgr";var n=SN[v]||"—";return v?'<span class="badge '+b+'">'+n+"</span>":'<span style="color:#444">—</span>';}
 function stbd(v){
   if(v==="closé")return'<span class="badge bg">Closé</span>';
@@ -532,6 +569,7 @@ function render(){
     if(fil.statut!=="tous"&&l.statut!==fil.statut)return false;
     if(fil.prov!=="tous"&&l.prov!==fil.prov)return false;
     if(fil.mois!=="tous"){var pts=l.date?l.date.split("/"):[];if(pts.length!==3)return false;if(pts[2]+"-"+pts[1]!==fil.mois)return false;}
+    if(fil.jour!=="tous"&&l.date!==fil.jour)return false;
     return true;
   });
   var tCA=0,tE=0,tC=0,cls=0,ns=0,fu=0;
