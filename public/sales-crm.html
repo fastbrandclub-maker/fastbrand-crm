@@ -113,7 +113,7 @@ select,input[type=text],input[type=date]{font-size:11px;padding:3px 6px;border:1
 .cal-event{border-radius:5px;padding:2px 5px;margin-bottom:2px;font-size:10px;line-height:1.3;cursor:default;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .cal-event.theo{background:#3b1f6e;color:#c4b5fd;border-left:3px solid #7c3aed}
 .cal-event.loic{background:#0c2a3a;color:#7dd3fc;border-left:3px solid #0ea5e9}
-.cal-event.none{background:#1e1e1e;color:#888;border-left:3px solid #444}
+.cal-event.none{background:#3b1f6e;color:#c4b5fd;border-left:3px solid #7c3aed}
 .cal-event.clos{opacity:.7}
 .cal-event .ce-heure{font-size:9px;opacity:.7;margin-right:3px}
 .cal-legend{display:flex;gap:12px;margin-bottom:10px;font-size:11px}
@@ -891,7 +891,7 @@ function renderCalendar(){
   html+='<button onclick="calWeekOff++;renderCalendar()">Semaine suiv. &#8250;</button>';
   if(calWeekOff!==0)html+='<button onclick="calWeekOff=0;renderCalendar()" style="background:#E8000D22;color:#E8000D;border-color:#E8000D">Aujourd\'hui</button>';
   html+='</div>';
-  html+='<div class="cal-legend"><span><i style="background:#7c3aed"></i>Théo</span><span><i style="background:#0ea5e9"></i>Loïc</span><span><i style="background:#444"></i>Non assigné</span><span style="color:#00d084;font-size:10px">✓ = Closé</span></div>';
+  html+='<div class="cal-legend"><span><i style="background:#7c3aed"></i>Théo (+ non assigné)</span><span><i style="background:#0ea5e9"></i>Loïc</span><span style="color:#00d084;font-size:10px">✓ = Closé</span></div>';
   html+='<div class="cal-week">';
   // Header row
   html+='<div class="cal-hcell" style="font-size:10px;color:#444">Heure</div>';
