@@ -128,6 +128,7 @@ select,input[type=text],input[type=date]{font-size:11px;padding:3px 6px;border:1
     <button class="tab on" onclick="showTab('crm',this)">CRM</button>
     <button class="tab" onclick="showTab('calendrier',this)">Calendrier</button>
     <button class="tab" onclick="showTab('analytics',this)">Dashboard</button>
+    <button class="tab" onclick="showTab('ressources',this)">Ressources</button>
   </div>
   <div class="live"><span class="dot"></span><span id="ltxt">En direct</span></div>
   <button class="btn btn-red" onclick="openM()">+ Ajouter</button>
@@ -139,35 +140,41 @@ select,input[type=text],input[type=date]{font-size:11px;padding:3px 6px;border:1
   <div class="stats" id="sg"></div>
   <div class="closers" id="cg"></div>
   <div class="fbar">
-    <label>Closer:</label>
-    <button class="fp on" onclick="sf('closer','tous',this)">Tous</button>
-    <button class="fp" onclick="sf('closer','Théo',this)">Th&#233;o</button>
-    <button class="fp" onclick="sf('closer','Loïc',this)">Lo&#239;c</button>
-    &nbsp;<label>Statut:</label>
-    <button class="fp on" onclick="sf('statut','tous',this)">Tous</button>
-    <button class="fp" onclick="sf('statut','closé',this)">Clos&#233;</button>
-    <button class="fp" onclick="sf('statut','follow_up',this)">Follow up</button>
-    <button class="fp" onclick="sf('statut','noshow',this)">No show</button>
-    <button class="fp" onclick="sf('statut','non_closé',this)">Non clos</button>
-    &nbsp;<label>Source:</label>
-    <button class="fp on" onclick="sf('prov','tous',this)">Toutes</button>
-    <button class="fp" onclick="sf('prov','snap',this)">Snap</button>
-    <button class="fp" onclick="sf('prov','tiktok',this)">TikTok</button>
-    <button class="fp" onclick="sf('prov','insta',this)">Insta</button>
-    <button class="fp" onclick="sf('prov','vsl',this)">VSL</button>
-    &nbsp;<label>Mois:</label>
-    <select id="sel-mois" onchange="sf('mois',this.value,this)" style="font-size:11px;padding:3px 10px;border:1px solid #2a2a2a;border-radius:20px;background:#161616;color:#e5e5e5;cursor:pointer">
-      <option value="tous">Tous les mois</option>
-      <option value="2026-12">D&#233;cembre 2026</option><option value="2026-11">Novembre 2026</option>
-      <option value="2026-10">Octobre 2026</option><option value="2026-09">Septembre 2026</option>
-      <option value="2026-08">Ao&#251;t 2026</option><option value="2026-07">Juillet 2026</option>
-      <option value="2026-06">Juin 2026</option><option value="2026-05">Mai 2026</option>
-      <option value="2026-04">Avril 2026</option><option value="2026-03">Mars 2026</option>
-      <option value="2026-02">F&#233;vrier 2026</option><option value="2026-01">Janvier 2026</option>
-      <option value="2025-12">D&#233;cembre 2025</option>
+    <label>Closer</label>
+    <select id="sel-closer" onchange="sf('closer',this.value)" style="font-size:11px;padding:3px 10px;border:1px solid #2a2a2a;border-radius:20px;background:#161616;color:#e5e5e5;cursor:pointer">
+      <option value="tous">Tous</option>
+      <option value="Th&#233;o">Th&#233;o</option>
+      <option value="Lo&#239;c">Lo&#239;c</option>
     </select>
-    &nbsp;<label>Jour:</label>
-    <select id="sel-jour" onchange="sfJour(this.value)" style="font-size:11px;padding:3px 10px;border:1px solid #2a2a2a;border-radius:20px;background:#161616;color:#e5e5e5;cursor:pointer;min-width:140px"></select>
+    <label>Statut</label>
+    <select id="sel-statut" onchange="sf('statut',this.value)" style="font-size:11px;padding:3px 10px;border:1px solid #2a2a2a;border-radius:20px;background:#161616;color:#e5e5e5;cursor:pointer">
+      <option value="tous">Tous</option>
+      <option value="clos&#233;">Clos&#233;</option>
+      <option value="follow_up">Follow up</option>
+      <option value="noshow">No show</option>
+      <option value="non_clos&#233;">Non clos</option>
+    </select>
+    <label>Source</label>
+    <select id="sel-prov" onchange="sf('prov',this.value)" style="font-size:11px;padding:3px 10px;border:1px solid #2a2a2a;border-radius:20px;background:#161616;color:#e5e5e5;cursor:pointer">
+      <option value="tous">Toutes</option>
+      <option value="snap">Snap</option>
+      <option value="tiktok">TikTok</option>
+      <option value="insta">Insta</option>
+      <option value="vsl">VSL</option>
+    </select>
+    <label>Mois</label>
+    <select id="sel-mois" onchange="sf('mois',this.value)" style="font-size:11px;padding:3px 10px;border:1px solid #2a2a2a;border-radius:20px;background:#161616;color:#e5e5e5;cursor:pointer">
+      <option value="tous">Tous les mois</option>
+      <option value="2026-12">D&#233;c 2026</option><option value="2026-11">Nov 2026</option>
+      <option value="2026-10">Oct 2026</option><option value="2026-09">Sep 2026</option>
+      <option value="2026-08">Ao&#251;t 2026</option><option value="2026-07">Juil 2026</option>
+      <option value="2026-06">Juin 2026</option><option value="2026-05">Mai 2026</option>
+      <option value="2026-04">Avr 2026</option><option value="2026-03">Mar 2026</option>
+      <option value="2026-02">F&#233;v 2026</option><option value="2026-01">Jan 2026</option>
+      <option value="2025-12">D&#233;c 2025</option>
+    </select>
+    <label>Jour</label>
+    <select id="sel-jour" onchange="sfJour(this.value)" style="font-size:11px;padding:3px 10px;border:1px solid #2a2a2a;border-radius:20px;background:#161616;color:#e5e5e5;cursor:pointer;min-width:130px"></select>
   </div>
   <div class="tw"><div class="ts">
     <table><thead><tr>
@@ -182,6 +189,7 @@ select,input[type=text],input[type=date]{font-size:11px;padding:3px 6px;border:1
 <div id="pg-feedback" class="page" style="display:none"><div class="wrap" id="feedback-content"></div></div>
 <div id="pg-calendrier" class="page"><div class="wrap" id="cal-content"></div></div>
 <div id="pg-analytics" class="page"><div class="wrap" id="analytics-content"></div></div>
+<div id="pg-ressources" class="page"><div class="wrap" id="res-content"></div></div>
 
 <div class="ov" id="modal">
   <div class="modal">
@@ -538,13 +546,11 @@ function saveM(){
   closeM();sl();save();
 }
 
-function sf(type,val,el){
+function sf(type,val){
   fil[type]=val;
-  if(type!=="mois"){
-    var bar=el.closest(".fbar");
-    bar.querySelectorAll(".fp").forEach(function(b){var oc=b.getAttribute("onclick");if(oc&&oc.indexOf("'"+type+"'")>=0)b.classList.remove("on");});
-    el.classList.add("on");
-  }
+  // Sync select value in case called programmatically
+  var ids={closer:'sel-closer',statut:'sel-statut',prov:'sel-prov',mois:'sel-mois'};
+  if(ids[type]){var s=document.getElementById(ids[type]);if(s)s.value=val;}
   render();
 }
 
@@ -754,10 +760,86 @@ var calWeekOff=0;
 
 function showTab(page,el){
   document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("on");});el.classList.add("on");
-  ["crm","calendrier","analytics"].forEach(function(p){var el2=document.getElementById("pg-"+p);if(el2)el2.classList.toggle("on",p===page);});
+  ["crm","calendrier","analytics","ressources"].forEach(function(p){var el2=document.getElementById("pg-"+p);if(el2)el2.classList.toggle("on",p===page);});
   if(page==="analytics")rAnalytics();
   if(page==="calendrier")renderCalendar();
+  if(page==="ressources")renderRessources();
 }
+
+var RES_SB_URL="https://yfdkojnxhhvnrsqlfikd.supabase.co/rest/v1/resources";
+var RES_CATS={paiement:"Paiement",follow_up:"Follow up",no_show:"No show"};
+var RES_ICONS={link:"&#128279;",page:"&#128196;",file:"&#128196;"};
+
+function renderRessources(){
+  var wrap=document.getElementById("res-content");
+  wrap.innerHTML='<div style="color:#555;font-size:13px;padding:20px">Chargement...</div>';
+  fetch(RES_SB_URL+"?select=*&scope=eq.sales&order=created_at.desc",{
+    headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}
+  }).then(function(r){return r.json();}).then(function(rows){
+    if(!rows||!rows.length){wrap.innerHTML='<div style="text-align:center;padding:40px;color:#555">Aucune ressource pour le moment</div>';return;}
+    var bycat={};
+    rows.forEach(function(r){var c=r.category||"general";if(!bycat[c])bycat[c]=[];bycat[c].push(r);});
+    var html='<div style="padding:4px 0 16px">';
+    html+='<h2 style="font-size:16px;font-weight:700;color:#fff;margin-bottom:16px">📚 Ressources Sales</h2>';
+    Object.keys(RES_CATS).forEach(function(cat){
+      var items=bycat[cat];if(!items||!items.length)return;
+      html+='<div style="margin-bottom:20px">';
+      html+='<div style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:8px"><div style="width:16px;height:1px;background:#333"></div>'+RES_CATS[cat]+' ('+items.length+')</div>';
+      html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">';
+      items.forEach(function(res){
+        var type=res.resource_type||"link";
+        var href=type==="file"?(res.file_url||"#"):type==="link"?(res.url||"#"):"#";
+        var isPage=type==="page";
+        html+='<div style="background:#161616;border:1px solid #222;border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor=\'#333\'" onmouseout="this.style.borderColor=\'#222\'" onclick="'+( isPage?'resOpenPage('+JSON.stringify(JSON.stringify(res))+')':"window.open('"+href.replace(/'/g,"\\'")+"','_blank')"  )+'">';
+        html+='<div style="width:32px;height:32px;background:#E8000D18;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">'+RES_ICONS[type]+'</div>';
+        html+='<div style="flex:1;min-width:0">';
+        html+='<div style="font-size:13px;font-weight:600;color:#e5e5e5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(res.title||"")+'</div>';
+        if(res.description)html+='<div style="font-size:11px;color:#666;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(res.description)+'</div>';
+        html+='<div style="font-size:10px;color:#E8000D;margin-top:4px">'+(isPage?"Lire →":type==="file"?"Ouvrir PDF ↗":"Ouvrir ↗")+'</div>';
+        html+='</div></div>';
+      });
+      html+='</div></div>';
+    });
+    // Any other categories
+    Object.keys(bycat).forEach(function(cat){
+      if(RES_CATS[cat])return;
+      var items=bycat[cat];
+      html+='<div style="margin-bottom:20px">';
+      html+='<div style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:8px"><div style="width:16px;height:1px;background:#333"></div>'+escH(cat)+' ('+items.length+')</div>';
+      html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">';
+      items.forEach(function(res){
+        var type=res.resource_type||"link";
+        var href=type==="file"?(res.file_url||"#"):type==="link"?(res.url||"#"):"#";
+        var isPage=type==="page";
+        html+='<div style="background:#161616;border:1px solid #222;border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;cursor:pointer" onclick="'+(isPage?'resOpenPage('+JSON.stringify(JSON.stringify(res))+')':"window.open('"+href.replace(/'/g,"\\'")+"','_blank')")+'">';
+        html+='<div style="width:32px;height:32px;background:#E8000D18;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">'+RES_ICONS[type]+'</div>';
+        html+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#e5e5e5">'+escH(res.title||"")+'</div>';
+        if(res.description)html+='<div style="font-size:11px;color:#666;margin-top:2px">'+escH(res.description)+'</div>';
+        html+='<div style="font-size:10px;color:#E8000D;margin-top:4px">'+(isPage?"Lire →":type==="file"?"Ouvrir PDF ↗":"Ouvrir ↗")+'</div></div></div>';
+      });
+      html+='</div></div>';
+    });
+    html+='</div>';
+    wrap.innerHTML=html;
+  }).catch(function(e){wrap.innerHTML='<div style="color:#f87171;padding:20px">Erreur chargement ressources</div>';});
+}
+
+function resOpenPage(jsonStr){
+  var res=JSON.parse(jsonStr);
+  var ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto";
+  ov.innerHTML='<div style="width:100%;max-width:680px;background:#161616;border:1px solid #2a2a2a;border-radius:16px;padding:24px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
+    +'<div><div style="font-size:16px;font-weight:700;color:#fff">'+escH(res.title||"")+'</div>'+(res.description?'<div style="font-size:12px;color:#555;margin-top:2px">'+escH(res.description)+'</div>':'')+'</div>'
+    +'<button onclick="this.closest(\'div[style*=\\\"position:fixed\\\"]\').remove()" style="width:32px;height:32px;background:#222;border:none;border-radius:8px;color:#aaa;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#x2715;</button>'
+    +'</div>'
+    +'<pre style="white-space:pre-wrap;font-size:13px;color:#d4d4d4;line-height:1.7;font-family:inherit">'+escH(res.content||"")+'</pre>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener("click",function(e){if(e.target===ov)ov.remove();});
+}
+
+function escH(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
 function renderCalendar(){
   var JOURS_L=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
@@ -1049,6 +1131,51 @@ function rAnalytics(){
       html+='<td style="font-weight:600;color:#00a86b">'+mCA.toLocaleString("fr-FR")+' €</td>';
       html+='<td style="font-weight:600;color:#22d3ee">'+mEnc.toLocaleString("fr-FR")+' €</td>';
       html+='<td style="font-weight:600;color:#e5e5e5">'+mCom.toLocaleString("fr-FR")+' €</td></tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+  html+='</div>';
+
+  // Par semaine
+  html+='<div style="background:'+C+';border-radius:12px;border:1px solid '+B+';padding:16px;margin-bottom:16px">';
+  html+='<h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:#fff">Performance par semaine</h3>';
+  var wk={};
+  function getMon(dateStr){var pts=dateStr.split("/");if(pts.length!==3)return null;var d=new Date(parseInt(pts[2]),parseInt(pts[1])-1,parseInt(pts[0]));var dow=d.getDay()||7;d.setDate(d.getDate()-(dow-1));return d;}
+  filtered.forEach(function(l){
+    if(!l.date)return;
+    var mon=getMon(l.date);if(!mon)return;
+    var k=p2(mon.getDate())+"/"+p2(mon.getMonth()+1)+"/"+mon.getFullYear();
+    if(!wk[k])wk[k]={mon:mon,leads:[],th:0,lo:0};
+    wk[k].leads.push(l);
+    if(l.closer==="Théo")wk[k].th++;
+    if(l.closer==="Loïc")wk[k].lo++;
+  });
+  var wkeys=Object.keys(wk).sort(function(a,b){return wk[b].mon-wk[a].mon;});
+  if(!wkeys.length){html+='<div class="empty">Aucune donnée</div>';}
+  else{
+    html+='<div style="overflow-x:auto"><table style="min-width:820px;width:100%"><thead><tr>';
+    html+='<th>Semaine</th><th>Calls</th><th>Closés</th><th>No show</th><th>Follow up</th><th>Taux</th><th>Collecté</th><th>Théo</th><th>Loïc</th></tr></thead><tbody>';
+    wkeys.forEach(function(k){
+      var w=wk[k];var wL=w.leads;
+      var sun=new Date(w.mon);sun.setDate(sun.getDate()+6);
+      var label=p2(w.mon.getDate())+"/"+p2(w.mon.getMonth()+1)+" → "+p2(sun.getDate())+"/"+p2(sun.getMonth()+1);
+      var wCls=wL.filter(function(l){return l.statut==="closé";}).length;
+      var wNs=wL.filter(function(l){return l.statut==="noshow"||l.appel==="noshow";}).length;
+      var wFu=wL.filter(function(l){return l.statut==="follow_up";}).length;
+      var wApp=wL.filter(function(l){return l.statut==="closé"||l.statut==="non_closé";}).length;
+      var wTaux=wApp?Math.round(wCls/wApp*100):0;
+      var wCA=wL.reduce(function(s,l){return s+cc(l);},0);
+      var isThisWeek=(function(){var now2=new Date();var m=getMon(p2(now2.getDate())+"/"+p2(now2.getMonth()+1)+"/"+now2.getFullYear());return m&&m.getTime()===w.mon.getTime();})();
+      html+='<tr'+(isThisWeek?' style="background:#0d1a0d"':'')+'>'+
+        '<td style="font-weight:600;color:'+(isThisWeek?"#00d084":"#e5e5e5")+'">'+label+(isThisWeek?' <span style="font-size:9px;color:#00d084;background:#0d2d0d;padding:1px 5px;border-radius:10px">Cette semaine</span>':'')+'</td>'+
+        '<td style="font-weight:700;color:#fff">'+wL.length+'</td>'+
+        '<td style="color:#00a86b;font-weight:700">'+wCls+'</td>'+
+        '<td style="color:#f87171">'+wNs+'</td>'+
+        '<td style="color:#a78bfa">'+wFu+'</td>'+
+        '<td><span style="font-weight:700;color:'+(wTaux>=30?"#00a86b":wTaux>=15?"#f59e0b":"#f87171")+'">'+wTaux+'%</span></td>'+
+        '<td style="color:#00a86b;font-weight:600">'+wCA.toLocaleString("fr-FR")+' €</td>'+
+        '<td style="color:#c4b5fd">'+w.th+'</td>'+
+        '<td style="color:#7dd3fc">'+w.lo+'</td></tr>';
     });
     html+='</tbody></table></div>';
   }
