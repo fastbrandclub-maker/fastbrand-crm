@@ -359,7 +359,7 @@ async function syncCalendly(){
       if(allEvents.length>=2000)break;
     }
 
-    var newCount=0;var skipCount=0;
+    var newCount=0;var skipCount=0;var heureUpdated=0;
     var batchSize=8;
     for(var i=0;i<allEvents.length;i+=batchSize){
       var batch=allEvents.slice(i,i+batchSize);
@@ -378,7 +378,11 @@ async function syncCalendly(){
           var key=inv.email+dateStr;
           if(deleted.indexOf(key)>=0){skipCount++;return;}
           for(var j=0;j<leads.length;j++){
-            if(leads[j].email===inv.email&&leads[j].date===dateStr){skipCount++;return;}
+            if(leads[j].email===inv.email&&leads[j].date===dateStr){
+              // Backfill heure on existing leads that don't have it
+              if(!leads[j].heure&&ev.start_time){leads[j].heure=ev.start_time;heureUpdated++;}
+              skipCount++;return;
+            }
           }
           var lead={
             id:Date.now()+Math.random(),
@@ -404,11 +408,13 @@ async function syncCalendly(){
       });
     }
 
-    document.getElementById("lsync").textContent=allEvents.length+" events Cal · +"+newCount+" leads · "+skipCount+" déjà présents — "+new Date().toLocaleTimeString("fr-FR");
+    document.getElementById("lsync").textContent=allEvents.length+" events Cal · +"+newCount+" leads — "+new Date().toLocaleTimeString("fr-FR");
     document.getElementById("ltxt").textContent="⚡ En direct";
 
-    if(newCount>0){
+    if(newCount>0||heureUpdated>0){
       sl();save();
+      var calPage=document.getElementById("pg-calendrier");
+      if(calPage&&calPage.classList.contains("on"))renderCalendar();
       var notif=document.createElement("div");
       notif.style.cssText="position:fixed;top:70px;right:20px;background:#00a86b;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;z-index:999";
       notif.textContent=newCount+" nouveau(x) lead(s) Calendly !";
