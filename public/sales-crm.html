@@ -294,18 +294,25 @@ sbRead(function(raw){
 // Calendly API sync
 async function syncCalendly(){
   try{
-    var d2=new Date();d2.setFullYear(d2.getFullYear()-2);
-    var minTime=d2.toISOString();
+    var dMin=new Date();dMin.setFullYear(dMin.getFullYear()-2);
+    var dMax=new Date();dMax.setFullYear(dMax.getFullYear()+1);
+    var minTime=dMin.toISOString();
+    var maxTime=dMax.toISOString();
 
     var allEvents=[];
-    var url="https://api.calendly.com/scheduled_events?user="+encodeURIComponent(CAL_USER)+"&count=100&min_start_time="+encodeURIComponent(minTime)+"&sort=start_time:desc";
+    var url="https://api.calendly.com/scheduled_events?user="+encodeURIComponent(CAL_USER)+"&count=100&min_start_time="+encodeURIComponent(minTime)+"&max_start_time="+encodeURIComponent(maxTime)+"&sort=start_time:desc";
     while(url){
       var r=await fetch(url,{headers:{Authorization:"Bearer "+CAL_TOKEN}});
-      if(!r.ok)break;
+      if(!r.ok){
+        var errTxt=await r.text().catch(function(){return"";});
+        document.getElementById("lsync").textContent="Erreur API: "+r.status;
+        console.error("Calendly API error",r.status,errTxt);
+        return;
+      }
       var data=await r.json();
       allEvents=allEvents.concat(data.collection||[]);
       url=(data.pagination&&data.pagination.next_page)?data.pagination.next_page:null;
-      if(allEvents.length>=500)break;
+      if(allEvents.length>=2000)break;
     }
 
     var newCount=0;
@@ -352,7 +359,6 @@ async function syncCalendly(){
       });
     }
 
-    localStorage.setItem("cal_last_sync",new Date().toISOString());
     document.getElementById("lsync").textContent="Synchro: "+new Date().toLocaleTimeString("fr-FR");
     document.getElementById("ltxt").textContent="⚡ En direct";
 
@@ -360,13 +366,13 @@ async function syncCalendly(){
       sl();save();
       var notif=document.createElement("div");
       notif.style.cssText="position:fixed;top:70px;right:20px;background:#00a86b;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;z-index:999";
-      notif.textContent=newCount+" nouveau(x) lead(s) !";
+      notif.textContent=newCount+" nouveau(x) lead(s) Calendly !";
       document.body.appendChild(notif);
       setTimeout(function(){notif.remove();},4000);
     }
   }catch(e){
     console.error("Calendly sync error:",e);
-    document.getElementById("lsync").textContent="Erreur sync";
+    document.getElementById("lsync").textContent="Erreur sync: "+e.message;
   }
 }
 
@@ -380,19 +386,28 @@ function sync(){
       var rd=data.deleted||[];
       rd.forEach(function(d){if(deleted.indexOf(d)<0)deleted.push(d);});
       var now5=Date.now()-5000;
-      var newLeads=data.leads.filter(function(l){return ok(l)&&deleted.indexOf(l.email+l.date)<0;});
-      var changed=JSON.stringify(newLeads)!==JSON.stringify(leads);
-      if(changed){
-        newLeads.forEach(function(rl){
-          for(var i=0;i<leads.length;i++){
-            if(leads[i].email===rl.email&&leads[i].date===rl.date){
-              if((leads[i]._ts||0)>now5)rl=leads[i];
-              break;
-            }
+      var remoteLeads=data.leads.filter(function(l){return ok(l)&&deleted.indexOf(l.email+l.date)<0;});
+      // Merge: start from remote, keep recently-edited local versions, add local-only leads not yet saved
+      var merged=remoteLeads.map(function(rl){
+        for(var i=0;i<leads.length;i++){
+          if(leads[i].email===rl.email&&leads[i].date===rl.date){
+            return (leads[i]._ts||0)>now5?leads[i]:rl;
           }
-        });
-        leads=newLeads;
-        leads.forEach(function(l){l.closer=fixEnc(l.closer);});
+        }
+        return rl;
+      });
+      // Add local leads (from Calendly) not yet persisted to Supabase
+      leads.forEach(function(ll){
+        if(deleted.indexOf(ll.email+ll.date)>=0)return;
+        for(var k=0;k<merged.length;k++){
+          if(merged[k].email===ll.email&&merged[k].date===ll.date)return;
+        }
+        merged.unshift(ll);
+      });
+      var changed=JSON.stringify(merged)!==JSON.stringify(leads);
+      leads=merged;
+      leads.forEach(function(l){l.closer=fixEnc(l.closer);});
+      if(changed){
         sl();
         try{localStorage.setItem("crm_local",JSON.stringify({leads:leads,deleted:deleted,ts:Date.now()}));}catch(e){}
         render();
