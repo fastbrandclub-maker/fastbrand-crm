@@ -30,7 +30,6 @@ const nav = [
 const adminNav = [
   { to: '/admin/compta', icon: Receipt, label: 'Comptabilité' },
   { to: '/admin/sales', icon: TrendingUp, label: 'Sales' },
-  { to: '/admin/contenu', icon: Megaphone, label: 'Contenu' },
   { to: '/admin/contrat', icon: FileText, label: 'Contrat' },
 ]
 

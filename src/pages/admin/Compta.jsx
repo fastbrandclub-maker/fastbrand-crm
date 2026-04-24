@@ -70,22 +70,31 @@ export default function Compta() {
   function setC(k, v) { setClientForm(f => ({ ...f, [k]: v })) }
   function setF(k, v) { setFraisForm(f => ({ ...f, [k]: v })) }
 
+  function sanitizeForm(form) {
+    const numFields = ['prix', 'paiement_recu', 'restant_du', 'frais_closer', 'frais_coach', 'net_apres_frais']
+    const out = { ...form }
+    numFields.forEach(k => { out[k] = out[k] === '' || out[k] == null ? null : Number(out[k]) })
+    return out
+  }
+
   async function handleAddClient(e) {
     e.preventDefault()
     setSaving(true)
+    const payload = sanitizeForm(clientForm)
     if (editingEntry) {
-      const { data } = await supabase.from('compta_entries').update(clientForm).eq('id', editingEntry).select().single()
+      const { data, error } = await supabase.from('compta_entries').update(payload).eq('id', editingEntry).select().single()
       setSaving(false)
-      if (data) {
-        setEntries(prev => prev.map(en => en.id === editingEntry ? data : en))
-        setEditingEntry(null)
-        setShowClientForm(false)
-        setClientForm(emptyClientForm)
-      }
+      if (error) { alert('Erreur : ' + error.message); return }
+      setEntries(prev => prev.map(en => en.id === editingEntry ? data : en))
+      setEditingEntry(null)
+      setShowClientForm(false)
+      setClientForm(emptyClientForm)
     } else {
-      const { data } = await supabase.from('compta_entries').insert(clientForm).select().single()
+      const { data, error } = await supabase.from('compta_entries').insert(payload).select().single()
       setSaving(false)
-      if (data) { setEntries(prev => [...prev, data].sort((a, b) => (a.date_paiement ?? '') > (b.date_paiement ?? '') ? 1 : -1)); setShowClientForm(false) }
+      if (error) { alert('Erreur : ' + error.message); return }
+      setEntries(prev => [...prev, data].sort((a, b) => (a.date_paiement ?? '') > (b.date_paiement ?? '') ? 1 : -1))
+      setShowClientForm(false)
     }
   }
 
