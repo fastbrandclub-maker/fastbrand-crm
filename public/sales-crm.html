@@ -312,14 +312,20 @@ async function syncCalendly(){
     var minTime=dMin.toISOString();
     var maxTime=dMax.toISOString();
 
+    // Get organization URI first (events are org-level, not per-user)
+    var meR=await fetch("https://api.calendly.com/users/me",{headers:{Authorization:"Bearer "+CAL_TOKEN}});
+    if(!meR.ok){document.getElementById("lsync").textContent="Erreur /users/me: "+meR.status;return;}
+    var meData=await meR.json();
+    var orgUri=(meData.resource&&meData.resource.current_organization)||"";
+    if(!orgUri){document.getElementById("lsync").textContent="Erreur: organisation introuvable";return;}
+
     var allEvents=[];
-    var url="https://api.calendly.com/scheduled_events?user="+encodeURIComponent(CAL_USER)+"&count=100&min_start_time="+encodeURIComponent(minTime)+"&max_start_time="+encodeURIComponent(maxTime)+"&sort=start_time:desc";
+    var url="https://api.calendly.com/scheduled_events?organization="+encodeURIComponent(orgUri)+"&count=100&min_start_time="+encodeURIComponent(minTime)+"&max_start_time="+encodeURIComponent(maxTime)+"&sort=start_time:desc";
     while(url){
       var r=await fetch(url,{headers:{Authorization:"Bearer "+CAL_TOKEN}});
       if(!r.ok){
         var errTxt=await r.text().catch(function(){return"";});
-        document.getElementById("lsync").textContent="Erreur API: "+r.status;
-        console.error("Calendly API error",r.status,errTxt);
+        document.getElementById("lsync").textContent="Erreur API: "+r.status+" "+errTxt.slice(0,60);
         return;
       }
       var data=await r.json();
