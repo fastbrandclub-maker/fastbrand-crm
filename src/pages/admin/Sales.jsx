@@ -3,7 +3,7 @@ import { ExternalLink, TrendingUp, BookOpen, FileText } from 'lucide-react'
 import Resources from '../Resources'
 import ContractGenerator from './ContractGenerator'
 
-const CRM_URL = 'https://silly-begonia-5cb75f.netlify.app/'
+const CRM_URL = '/sales-crm.html'
 
 export default function Sales() {
   const [tab, setTab] = useState('sales')
