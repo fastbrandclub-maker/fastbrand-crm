@@ -237,6 +237,16 @@ function ce(l){var m=cc(l);if(!m)return 0;if(l.paiement==="1x")return m;if(l.pai
 function com(l){return Math.round(ce(l)*0.1);}
 function fmtD(v){if(!v)return"";if(typeof v==="string"&&v.indexOf("/")>=0)return v;try{var d=new Date(v);if(!isNaN(d))return p2(d.getDate())+"/"+p2(d.getMonth()+1)+"/"+d.getFullYear();}catch(e){}return v;}
 
+// Normalise un numéro de téléphone pour wa.me — corrige les "+33 06..." et "06..."
+function normalizePhoneWA(raw){
+  if(!raw)return"";
+  var s=String(raw).replace(/\D/g,""); // digits only
+  if(s.indexOf("00")===0)s=s.slice(2); // 0033... → 33...
+  if(s.charAt(0)==="0")s="33"+s.slice(1); // 06... → 336...
+  if(s.indexOf("330")===0)s="33"+s.slice(3); // 3306... → 336... (fix redundant 0)
+  return s;
+}
+
 function calcR(l){
   if(l.statut!=="closé"||!l.offre)return null;
   var tot=cc(l),enc=ce(l),reste=tot-enc;if(reste<=0)return null;
@@ -739,12 +749,12 @@ function render(){
       '<td style="font-weight:600;color:#00a86b">'+(c3?c3.toLocaleString("fr-FR")+" €":"—")+'</td>'+
       '<td>'+(c3?'<select onchange="uf('+lead.id+',\'commPaid\',this.value===\'oui\')" style="font-size:10px;padding:2px 5px;background:#111;border:1px solid #2a2a2a;color:#e5e5e5"><option value="non" '+(lead.commPaid?"":"selected")+'>Non</option><option value="oui" '+(lead.commPaid?"selected":"")+'>Payée</option></select>':"—")+'</td>'+
       (function(){
-        var tel=lead.tel?lead.tel.replace(/[^0-9+]/g,""):"";
+        var tel=normalizePhoneWA(lead.tel);
         var prenom=(lead.nom||"").split(" ")[0];
         var msgWa=encodeURIComponent("Salut "+prenom+" , tu vas bien ? Je suis Ronaldo, l'associé de Selim ! Tu as 3 min pour un échange rapide , pour confirmer ensemble quelques information avant ton rdv de demain ?");
         var btns='<td style="white-space:nowrap;min-width:100px">';
         if(tel){
-          btns+='<a href="https://wa.me/'+tel+'?text='+msgWa+'" target="_blank" title="Envoyer message WhatsApp au lead" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:#0a2a12;border:1px solid #25d366;margin-right:3px;text-decoration:none;font-size:15px">&#x1F4AC;</a>';
+          btns+='<a href="https://wa.me/'+tel+'?text='+msgWa+'" target="_blank" title="Envoyer message WhatsApp au lead ('+tel+')" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:#0a2a12;border:1px solid #25d366;margin-right:3px;text-decoration:none;font-size:15px">&#x1F4AC;</a>';
         }
         btns+='<button class="ab" onclick="editL('+lead.id+')" style="margin-right:2px">Edit</button>';
         btns+='<button class="ab d" onclick="delL('+lead.id+')">Sup</button>';
