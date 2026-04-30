@@ -3,8 +3,19 @@ import { Link } from 'react-router-dom'
 import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, MessageCircle, Trash2 } from 'lucide-react'
 import { OfferTimer, getEndDate } from '../components/students/OfferTimer'
 
-function RelanceButton({ firstName, groupUrl }) {
-  const message = `Hello, ${firstName} tu vas bien ? Tout ce passe bien ?`
+function buildRelanceMessage(firstNames) {
+  const clean = firstNames.filter(Boolean)
+  if (clean.length === 0) return `Hello, tu vas bien ? Tout ce passe bien ?`
+  if (clean.length === 1) return `Hello, ${clean[0]} tu vas bien ? Tout ce passe bien ?`
+  if (clean.length === 2) return `Hello ${clean[0]} et ${clean[1]}, vous allez bien ? Tout ce passe bien ?`
+  const last = clean[clean.length - 1]
+  const head = clean.slice(0, -1).join(', ')
+  return `Hello ${head} et ${last}, vous allez bien ? Tout ce passe bien ?`
+}
+
+function RelanceButton({ firstName, groupUrl, groupMembers }) {
+  const members = (groupMembers && groupMembers.length > 0) ? groupMembers : [firstName]
+  const message = buildRelanceMessage(members)
 
   if (!groupUrl) {
     return (
@@ -236,6 +247,11 @@ export default function Students() {
             const progress = getProgress(student.student_steps)
             const inactive = isInactive(student)
             const blocked = hasBlocked(student)
+            const groupMembers = student.whatsapp_group
+              ? students
+                  .filter(s => s.whatsapp_group && s.whatsapp_group === student.whatsapp_group)
+                  .map(s => s.first_name)
+              : [student.first_name]
 
             return (
               <Link
@@ -306,7 +322,7 @@ export default function Students() {
                         <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
                       </div>
                     </div>
-                    <RelanceButton firstName={student.first_name} groupUrl={student.whatsapp_group} />
+                    <RelanceButton firstName={student.first_name} groupUrl={student.whatsapp_group} groupMembers={groupMembers} />
                     {isAdmin && (
                       <button
                         onClick={async e => {
