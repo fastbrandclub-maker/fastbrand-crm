@@ -5,12 +5,13 @@ import { OfferTimer, getEndDate } from '../components/students/OfferTimer'
 
 function buildRelanceMessage(firstNames) {
   const clean = firstNames.filter(Boolean)
-  if (clean.length === 0) return `Hello, tu vas bien ? Tout ce passe bien ?`
-  if (clean.length === 1) return `Hello, ${clean[0]} tu vas bien ? Tout ce passe bien ?`
-  if (clean.length === 2) return `Hello ${clean[0]} et ${clean[1]}, vous allez bien ? Tout ce passe bien ?`
-  const last = clean[clean.length - 1]
-  const head = clean.slice(0, -1).join(', ')
-  return `Hello ${head} et ${last}, vous allez bien ? Tout ce passe bien ?`
+  if (clean.length <= 1) {
+    const name = clean[0]
+    return name
+      ? `Hello, ${name} tu vas bien ? News ?`
+      : `Hello, tu vas bien ? News ?`
+  }
+  return `Hello, vous allez bien ? News ?`
 }
 
 function RelanceButton({ firstName, groupUrl, groupMembers }) {
