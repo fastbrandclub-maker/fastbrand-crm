@@ -8,10 +8,10 @@ function buildRelanceMessage(firstNames) {
   if (clean.length <= 1) {
     const name = clean[0]
     return name
-      ? `Hello, ${name} tu vas bien ? News ?`
-      : `Hello, tu vas bien ? News ?`
+      ? `Hello, ${name} tu vas bien ? Des news de ton côté ?`
+      : `Hello, tu vas bien ? Des news de ton côté ?`
   }
-  return `Hello, vous allez bien ? News ?`
+  return `Hello, vous allez bien ? Des news de votre côté ?`
 }
 
 function RelanceButton({ firstName, groupUrl, groupMembers }) {
