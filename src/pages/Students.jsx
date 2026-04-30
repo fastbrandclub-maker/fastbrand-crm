@@ -3,39 +3,43 @@ import { Link } from 'react-router-dom'
 import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, MessageCircle, Trash2 } from 'lucide-react'
 import { OfferTimer, getEndDate } from '../components/students/OfferTimer'
 
-function sanitizePhone(raw) {
-  if (!raw) return ''
-  const digits = String(raw).replace(/[^\d+]/g, '').replace(/^\+/, '')
-  if (digits.startsWith('00')) return digits.slice(2)
-  if (digits.startsWith('0')) return '33' + digits.slice(1)
-  return digits
-}
+function RelanceButton({ firstName, groupUrl }) {
+  const message = `Hello, ${firstName} tu vas bien ? Tout ce passe bien ?`
 
-function RelanceButton({ firstName, phone }) {
-  const clean = sanitizePhone(phone)
-  if (!clean) {
+  if (!groupUrl) {
     return (
       <span
-        title="Pas de numéro renseigné"
+        title="Pas de groupe WhatsApp renseigné — éditer l'élève pour ajouter le lien"
         className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-800/40 border border-zinc-700/40 shrink-0 cursor-not-allowed"
       >
         <MessageCircle size={14} className="text-zinc-600" />
       </span>
     )
   }
-  const message = encodeURIComponent(`Hello, ${firstName} tu vas bien ? Tout ce passe bien ?`)
-  const url = `https://wa.me/${clean}?text=${message}`
+
+  async function handleClick(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(message)
+    } catch (_) {}
+    window.open(groupUrl, '_blank', 'noopener,noreferrer')
+
+    const notif = document.createElement('div')
+    notif.textContent = 'Message copié — colle-le dans le groupe (Cmd+V)'
+    notif.style.cssText = 'position:fixed;top:70px;right:20px;background:#10b981;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.3)'
+    document.body.appendChild(notif)
+    setTimeout(() => notif.remove(), 3500)
+  }
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={e => e.stopPropagation()}
-      title={`Relancer ${firstName} via WhatsApp`}
+    <button
+      onClick={handleClick}
+      title={`Relancer ${firstName} dans le groupe WhatsApp (message copié)`}
       className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors shrink-0"
     >
       <MessageCircle size={14} className="text-emerald-400" />
-    </a>
+    </button>
   )
 }
 import { supabase } from '../lib/supabase'
@@ -292,7 +296,7 @@ export default function Students() {
                         <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
                       </div>
                     </div>
-                    <RelanceButton firstName={student.first_name} phone={student.phone} />
+                    <RelanceButton firstName={student.first_name} groupUrl={student.whatsapp_group} />
                     {isAdmin && (
                       <button
                         onClick={async e => {
