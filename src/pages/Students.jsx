@@ -1,13 +1,30 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, Bell, Trash2 } from 'lucide-react'
+import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, MessageCircle, Trash2 } from 'lucide-react'
 import { OfferTimer, getEndDate } from '../components/students/OfferTimer'
 
-const RONALDO_PHONE = '33641016134'
+function sanitizePhone(raw) {
+  if (!raw) return ''
+  const digits = String(raw).replace(/[^\d+]/g, '').replace(/^\+/, '')
+  if (digits.startsWith('00')) return digits.slice(2)
+  if (digits.startsWith('0')) return '33' + digits.slice(1)
+  return digits
+}
 
-function RelanceButton({ firstName }) {
-  const message = encodeURIComponent(`Hello, tu peux relancer ${firstName} ça fait 5 jours qu'on a pas échangé`)
-  const url = `https://wa.me/${RONALDO_PHONE}?text=${message}`
+function RelanceButton({ firstName, phone }) {
+  const clean = sanitizePhone(phone)
+  if (!clean) {
+    return (
+      <span
+        title="Pas de numéro renseigné"
+        className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-800/40 border border-zinc-700/40 shrink-0 cursor-not-allowed"
+      >
+        <MessageCircle size={14} className="text-zinc-600" />
+      </span>
+    )
+  }
+  const message = encodeURIComponent(`Hello, ${firstName} tu vas bien ? Tout ce passe bien ?`)
+  const url = `https://wa.me/${clean}?text=${message}`
   return (
     <a
       href={url}
@@ -15,9 +32,9 @@ function RelanceButton({ firstName }) {
       rel="noopener noreferrer"
       onClick={e => e.stopPropagation()}
       title={`Relancer ${firstName} via WhatsApp`}
-      className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors shrink-0"
+      className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors shrink-0"
     >
-      <Bell size={14} className="text-amber-400" />
+      <MessageCircle size={14} className="text-emerald-400" />
     </a>
   )
 }
@@ -275,7 +292,7 @@ export default function Students() {
                         <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
                       </div>
                     </div>
-                    <RelanceButton firstName={student.first_name} />
+                    <RelanceButton firstName={student.first_name} phone={student.phone} />
                     {isAdmin && (
                       <button
                         onClick={async e => {
