@@ -3,31 +3,25 @@ import { Link } from 'react-router-dom'
 import { Plus, Search, AlertTriangle, Clock, ChevronRight, ExternalLink, MessageCircle, Trash2 } from 'lucide-react'
 import { OfferTimer, getEndDate } from '../components/students/OfferTimer'
 
-function RelanceButton({ firstName, groupUrl }) {
+function RelanceButton({ firstName }) {
   const message = `Hello, ${firstName} tu vas bien ? Tout ce passe bien ?`
-
-  if (!groupUrl) {
-    return (
-      <span
-        title="Pas de groupe WhatsApp renseigné — éditer l'élève pour ajouter le lien"
-        className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-800/40 border border-zinc-700/40 shrink-0 cursor-not-allowed"
-      >
-        <MessageCircle size={14} className="text-zinc-600" />
-      </span>
-    )
-  }
 
   async function handleClick(e) {
     e.preventDefault()
     e.stopPropagation()
+    let ok = true
     try {
       await navigator.clipboard.writeText(message)
-    } catch (_) {}
-    window.open(groupUrl, '_blank', 'noopener,noreferrer')
+    } catch (_) {
+      ok = false
+    }
+    window.open('https://web.whatsapp.com/', '_blank', 'noopener,noreferrer')
 
     const notif = document.createElement('div')
-    notif.textContent = 'Message copié — colle-le dans le groupe (Cmd+V)'
-    notif.style.cssText = 'position:fixed;top:70px;right:20px;background:#10b981;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.3)'
+    notif.textContent = ok
+      ? 'Message copié — ouvre le groupe et colle (Cmd+V)'
+      : 'Copie échouée — copie manuellement : ' + message
+    notif.style.cssText = 'position:fixed;top:70px;right:20px;background:#10b981;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.3);max-width:340px'
     document.body.appendChild(notif)
     setTimeout(() => notif.remove(), 3500)
   }
@@ -35,7 +29,7 @@ function RelanceButton({ firstName, groupUrl }) {
   return (
     <button
       onClick={handleClick}
-      title={`Relancer ${firstName} dans le groupe WhatsApp (message copié)`}
+      title={`Copier le message de relance pour ${firstName} et ouvrir WhatsApp Web`}
       className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors shrink-0"
     >
       <MessageCircle size={14} className="text-emerald-400" />
@@ -296,7 +290,7 @@ export default function Students() {
                         <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
                       </div>
                     </div>
-                    <RelanceButton firstName={student.first_name} groupUrl={student.whatsapp_group} />
+                    <RelanceButton firstName={student.first_name} />
                     {isAdmin && (
                       <button
                         onClick={async e => {

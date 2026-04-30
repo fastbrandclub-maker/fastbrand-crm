@@ -14,7 +14,6 @@ export default function StudentForm({ student, onSave, onCancel }) {
     first_name: student?.first_name ?? '',
     last_name: student?.last_name ?? '',
     email: student?.email ?? '',
-    whatsapp_group: student?.whatsapp_group ?? '',
     start_date: student?.start_date ?? new Date().toISOString().slice(0, 10),
     offre: student?.offre ?? 'indetermine',
     coach_id: student?.coach_id ?? profile?.id ?? '',
@@ -79,12 +78,6 @@ export default function StudentForm({ student, onSave, onCancel }) {
         value={form.email}
         onChange={e => set('email', e.target.value)}
         placeholder="email@exemple.com (facultatif)"
-      />
-      <Input
-        label="Lien groupe WhatsApp"
-        value={form.whatsapp_group}
-        onChange={e => set('whatsapp_group', e.target.value)}
-        placeholder="https://chat.whatsapp.com/XXXXXXXX (facultatif)"
       />
 
       <div className="grid grid-cols-2 gap-3">
