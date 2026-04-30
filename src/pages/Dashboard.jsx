@@ -7,6 +7,7 @@ import { STEPS, INACTIVITY_DAYS, TEAM } from '../lib/constants'
 import { formatDistanceToNow, differenceInDays, format, isThisWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { getEndDate, OfferBadge } from '../components/students/OfferTimer'
+import RelanceButton from '../components/students/RelanceButton'
 
 function StatCard({ icon: Icon, label, value, color = 'text-white' }) {
   return (
@@ -279,25 +280,33 @@ export default function Dashboard() {
               {inactiveOpen && (
                 <div className="border-t border-amber-900/30 px-4 pb-4 pt-3 space-y-2">
                   <p className="text-xs text-zinc-600 mb-2">Aucune mise à jour depuis plus de 7 jours</p>
-                  {inactiveStudents.map(s => (
-                    <div key={s.id} className="flex items-center justify-between group">
-                      <Link to={`/students/${s.id}`} className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors">{s.first_name} {s.last_name}</p>
-                        <p className="text-xs text-zinc-500">{formatDistanceToNow(new Date(s.last_updated_at), { locale: fr, addSuffix: true })}</p>
-                      </Link>
-                      <button
-                        onClick={async e => {
-                          e.preventDefault()
-                          const now = new Date().toISOString()
-                          await supabase.from('students').update({ last_updated_at: now }).eq('id', s.id)
-                          setStudents(prev => prev.map(st => st.id === s.id ? { ...st, last_updated_at: now } : st))
-                        }}
-                        className="ml-3 px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-colors shrink-0"
-                      >
-                        Actif
-                      </button>
-                    </div>
-                  ))}
+                  {inactiveStudents.map(s => {
+                    const groupMembers = s.whatsapp_group
+                      ? students
+                          .filter(st => st.whatsapp_group && st.whatsapp_group === s.whatsapp_group)
+                          .map(st => st.first_name)
+                      : [s.first_name]
+                    return (
+                      <div key={s.id} className="flex items-center justify-between group gap-2">
+                        <Link to={`/students/${s.id}`} className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white group-hover:text-amber-400 transition-colors">{s.first_name} {s.last_name}</p>
+                          <p className="text-xs text-zinc-500">{formatDistanceToNow(new Date(s.last_updated_at), { locale: fr, addSuffix: true })}</p>
+                        </Link>
+                        <RelanceButton firstName={s.first_name} groupUrl={s.whatsapp_group} groupMembers={groupMembers} size="sm" />
+                        <button
+                          onClick={async e => {
+                            e.preventDefault()
+                            const now = new Date().toISOString()
+                            await supabase.from('students').update({ last_updated_at: now }).eq('id', s.id)
+                            setStudents(prev => prev.map(st => st.id === s.id ? { ...st, last_updated_at: now } : st))
+                          }}
+                          className="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-colors shrink-0"
+                        >
+                          Actif
+                        </button>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
