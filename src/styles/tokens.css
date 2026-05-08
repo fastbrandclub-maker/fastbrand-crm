@@ -1,0 +1,201 @@
+/*
+ * FastBrand CRM — Design Tokens
+ *
+ * Variables CSS source de vérité pour CRM coach + portail élève.
+ * Synchronisées avec tailwind.config.js — modifier les deux ensemble.
+ *
+ * Référence : DESIGN_SYSTEM.md à la racine du projet.
+ */
+
+:root {
+  /* =========================================================================
+     COULEURS — Brand
+     ========================================================================= */
+  --color-brand-red: #E8000D;
+  --color-brand-red-hover: #B91C1C;     /* red-700 — état hover des CTA primaires */
+  --color-brand-dark: #0A0A0A;          /* page background */
+  --color-brand-surface: #111111;       /* cards, panels, sidebar, inputs */
+  --color-brand-card: #161616;          /* modale (1 cran plus clair) */
+  --color-brand-border: #222222;        /* bordure par défaut */
+
+  /* Aliases sémantiques de surfaces */
+  --color-bg-primary: var(--color-brand-dark);
+  --color-bg-secondary: var(--color-brand-surface);
+  --color-bg-tertiary: var(--color-brand-card);
+  --color-border-default: var(--color-brand-border);
+  --color-border-hover: #3F3F46;        /* zinc-700 */
+
+  /* =========================================================================
+     COULEURS — Texte
+     ========================================================================= */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #D4D4D8;      /* zinc-300 — corps de message */
+  --color-text-muted: #A1A1AA;          /* zinc-400 — labels, meta */
+  --color-text-tertiary: #71717A;       /* zinc-500 — helper, captions */
+  --color-text-placeholder: #52525B;    /* zinc-600 — placeholders, icons inactives */
+  --color-text-disabled: #3F3F46;       /* zinc-700 */
+
+  /* =========================================================================
+     COULEURS — Accents
+     ========================================================================= */
+  --color-accent: var(--color-brand-red);
+  --color-accent-soft: rgb(232 0 13 / 0.20);     /* brand-red/20 — avatars, badges admin */
+  --color-accent-glow: rgb(232 0 13 / 0.10);     /* brand-red/10 — backgrounds très doux */
+
+  /* =========================================================================
+     COULEURS — Sémantiques
+     ========================================================================= */
+  /* Success (emerald) */
+  --color-success: #34D399;             /* emerald-400 — texte/icône */
+  --color-success-text: #6EE7B7;        /* emerald-300 — texte sur fond foncé */
+  --color-success-bg: rgb(16 185 129 / 0.10);    /* emerald-500/10 */
+  --color-success-bg-strong: #022C22;   /* emerald-950 */
+  --color-success-border: rgb(16 185 129 / 0.30); /* emerald-500/30 */
+
+  /* Warning (amber) */
+  --color-warning: #FBBF24;             /* amber-400 */
+  --color-warning-bg: rgb(245 158 11 / 0.20);    /* amber-500/20 */
+  --color-warning-bg-strong: #451A03;   /* amber-950 */
+  --color-warning-border: rgb(146 64 14 / 0.40); /* amber-800/40 */
+
+  /* Danger (red — utilise brand-red comme accent fort, et red-300/950 pour les surfaces) */
+  --color-danger: var(--color-brand-red);
+  --color-danger-text: #FCA5A5;         /* red-300 */
+  --color-danger-bg: rgb(127 29 29 / 0.50);      /* red-900/50 */
+  --color-danger-bg-strong: #450A0A;    /* red-950 */
+  --color-danger-border: rgb(153 27 27 / 0.50);  /* red-800/50 */
+
+  /* Info (blue) */
+  --color-info: #60A5FA;                /* blue-400 */
+  --color-info-text: #93C5FD;           /* blue-300 */
+  --color-info-bg: #172554;             /* blue-950 */
+  --color-info-border: rgb(30 64 175 / 0.30);    /* blue-800/30 */
+
+  /* =========================================================================
+     COULEURS — Statuts d'étape (cf src/lib/constants.js > STEP_STATUS)
+     ========================================================================= */
+  --color-step-todo-bg: #27272A;        /* zinc-800 */
+  --color-step-todo-text: #A1A1AA;      /* zinc-400 */
+  --color-step-todo-dot: #71717A;       /* zinc-500 */
+
+  --color-step-progress-bg: #172554;    /* blue-950 */
+  --color-step-progress-text: #93C5FD;  /* blue-300 */
+  --color-step-progress-dot: #60A5FA;   /* blue-400 */
+
+  --color-step-validated-bg: #022C22;   /* emerald-950 */
+  --color-step-validated-text: #6EE7B7; /* emerald-300 */
+  --color-step-validated-dot: #34D399;  /* emerald-400 */
+
+  --color-step-blocked-bg: #450A0A;     /* red-950 */
+  --color-step-blocked-text: #FCA5A5;   /* red-300 */
+  --color-step-blocked-dot: #EF4444;    /* red-500 */
+
+  /* =========================================================================
+     COULEURS — Offres (cf OfferTimer.jsx > OFFERS)
+     ========================================================================= */
+  --color-offre-60j-bg: #172554;        /* blue-950 */
+  --color-offre-60j-text: #93C5FD;
+  --color-offre-6m-bg: #3B0764;         /* purple-950 */
+  --color-offre-6m-text: #D8B4FE;
+  --color-offre-12m-bg: #1E1B4B;        /* indigo-950 */
+  --color-offre-12m-text: #A5B4FC;
+  --color-offre-resultats-bg: #022C22;
+  --color-offre-resultats-text: #6EE7B7;
+  --color-offre-indeter-bg: #27272A;
+  --color-offre-indeter-text: #A1A1AA;
+
+  /* =========================================================================
+     COULEURS — Surfaces translucides
+     ========================================================================= */
+  --color-overlay-light: rgb(255 255 255 / 0.05);   /* white/5 */
+  --color-overlay-medium: rgb(255 255 255 / 0.10);  /* white/10 */
+  --color-overlay-strong: rgb(255 255 255 / 0.15);  /* white/15 */
+  --color-modal-backdrop: rgb(0 0 0 / 0.70);
+
+  /* =========================================================================
+     TYPOGRAPHIE
+     ========================================================================= */
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --font-size-10: 10px;
+  --font-size-11: 11px;
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+
+  /* =========================================================================
+     ESPACEMENTS — Échelle Tailwind par défaut, alias pour les valeurs récurrentes
+     ========================================================================= */
+  --space-1: 0.25rem;          /* 4 */
+  --space-1-5: 0.375rem;       /* 6 */
+  --space-2: 0.5rem;           /* 8 */
+  --space-2-5: 0.625rem;       /* 10 */
+  --space-3: 0.75rem;          /* 12 */
+  --space-3-5: 0.875rem;       /* 14 */
+  --space-4: 1rem;             /* 16 */
+  --space-5: 1.25rem;          /* 20 */
+  --space-6: 1.5rem;           /* 24 */
+  --space-8: 2rem;             /* 32 */
+
+  /* Padding sémantique */
+  --padding-card: var(--space-4);
+  --padding-card-rich: var(--space-5);
+  --padding-page: var(--space-4);          /* mobile */
+  --padding-page-desktop: var(--space-6);  /* lg+ */
+
+  /* =========================================================================
+     BORDER-RADIUS
+     ========================================================================= */
+  --radius-sm: 6px;             /* rounded-md — boutons, inputs, items nav */
+  --radius-md: 8px;             /* rounded-lg — cards secondaires, alertes */
+  --radius-lg: 12px;            /* rounded-xl — cards principales, modales */
+  --radius-card: var(--radius-lg);
+  --radius-control: var(--radius-sm);
+  --radius-pill: 9999px;        /* rounded-full — avatars, dots, badges */
+
+  /* =========================================================================
+     OMBRES
+     ========================================================================= */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.20);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.30);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.40);
+  --shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.5);   /* shadow-2xl Tailwind */
+  --shadow-accent: 0 10px 15px -3px rgb(232 0 13 / 0.20);  /* shadow-lg shadow-brand-red/20 */
+
+  /* =========================================================================
+     TRANSITIONS
+     ========================================================================= */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-progress: 700ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);   /* Tailwind ease-in-out */
+
+  /* =========================================================================
+     DIMENSIONS
+     ========================================================================= */
+  --sidebar-width: 14rem;       /* w-56 */
+  --max-width-content: 72rem;   /* max-w-6xl */
+  --max-width-narrow: 64rem;    /* max-w-5xl */
+  --max-width-portal: 42rem;    /* max-w-2xl */
+  --max-width-form: 24rem;      /* max-w-sm — Login */
+
+  /* Z-index */
+  --z-sidebar-overlay: 40;
+  --z-sidebar: 50;
+  --z-modal: 50;
+  --z-toast: 99999;
+}
