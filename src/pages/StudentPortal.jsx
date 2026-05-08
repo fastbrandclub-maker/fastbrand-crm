@@ -3,11 +3,14 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { STEPS } from '../lib/constants'
 import {
-  Zap, AlertTriangle, Loader2, ChevronRight,
-  MessageSquare, CheckCircle2, Send
+  Zap, AlertTriangle, ChevronRight,
+  MessageSquare, CheckCircle2, Send, Loader2,
 } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
-import { getEndDate } from '../components/students/OfferTimer'
+import { getEndDate, OfferBadge } from '../components/students/OfferTimer'
+import { StatusBadge } from '../components/ui/Badge'
+import Button from '../components/ui/Button'
+import Input, { Textarea, Select } from '../components/ui/Input'
 
 const STATUS_OPTIONS = [
   { value: 'todo',        label: 'À faire' },
@@ -15,17 +18,6 @@ const STATUS_OPTIONS = [
   { value: 'validated',   label: 'Validé' },
   { value: 'blocked',     label: 'Bloqué' },
 ]
-
-const STATUS_BADGE = {
-  todo:        { dot: 'bg-zinc-500',    text: 'text-zinc-400',    label: 'À faire' },
-  in_progress: { dot: 'bg-blue-400',    text: 'text-blue-400',    label: 'En cours' },
-  validated:   { dot: 'bg-emerald-400', text: 'text-emerald-400', label: 'Validé' },
-  blocked:     { dot: 'bg-red-500',     text: 'text-red-400',     label: 'Bloqué' },
-}
-
-function offreLabel(o) {
-  return { '70_jours': '60 JOURS', '6_mois': '6 MOIS', '12_mois': '12 MOIS', resultats: 'Résultats', indetermine: 'Indéterminé' }[o] ?? o ?? '—'
-}
 
 export default function StudentPortal() {
   const { token } = useParams()
@@ -76,7 +68,6 @@ export default function StudentPortal() {
     const form = getForm(stepNum)
     const studentId = data.student.id
 
-    // Mise à jour directe dans student_steps (pas de RPC)
     await supabase.from('student_steps').update({
       status: form.status,
       student_note: form.note || null,
@@ -84,8 +75,7 @@ export default function StudentPortal() {
       updated_at: new Date().toISOString(),
     }).eq('student_id', studentId).eq('step_number', stepNum)
 
-    // Insertion directe dans student_messages
-    const noteText = form.note.trim() || `Statut mis à jour : ${STATUS_BADGE[form.status]?.label ?? form.status}`
+    const noteText = form.note.trim() || `Statut mis à jour : ${STATUS_OPTIONS.find(o => o.value === form.status)?.label ?? form.status}`
     await supabase.from('student_messages').insert({
       student_id: studentId,
       step_number: stepNum,
@@ -94,7 +84,6 @@ export default function StudentPortal() {
       link_url: form.link || null,
     })
 
-    // Mettre à jour last_updated_at
     await supabase.from('students').update({ last_updated_at: new Date().toISOString() }).eq('id', studentId)
 
     setData(prev => ({
@@ -116,7 +105,6 @@ export default function StudentPortal() {
     setSendingGeneral(true)
     setErrorGeneral(false)
 
-    // Insertion directe dans student_messages (pas de RPC)
     const { error } = await supabase.from('student_messages').insert({
       student_id: data.student.id,
       message: generalMsg.trim(),
@@ -131,15 +119,15 @@ export default function StudentPortal() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
-      <Loader2 size={28} className="text-red-500 animate-spin" />
+    <div className="min-h-screen bg-brand-dark flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
   if (notFound) return (
-    <div className="min-h-screen bg-[#0f0f0f] flex flex-col items-center justify-center px-6 text-center">
-      <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
-        <AlertTriangle size={20} className="text-red-500" />
+    <div className="min-h-screen bg-brand-dark flex flex-col items-center justify-center px-6 text-center">
+      <div className="w-12 h-12 bg-brand-red/20 rounded-full flex items-center justify-center mb-4">
+        <AlertTriangle size={20} className="text-brand-red" />
       </div>
       <h1 className="text-lg font-bold text-white mb-2">Lien invalide</h1>
       <p className="text-sm text-zinc-500">Ce lien n'existe pas.<br />Contacte ton coach.</p>
@@ -152,11 +140,11 @@ export default function StudentPortal() {
   const daysLeft = endDate ? differenceInDays(endDate, new Date()) : null
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] pb-16">
-      {/* Header */}
-      <div className="bg-[#161616] border-b border-white/8 px-4 py-4 sticky top-0 z-10">
+    <div className="min-h-screen bg-brand-dark pb-16">
+      {/* Header sticky */}
+      <div className="bg-brand-surface border-b border-brand-border px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 bg-brand-red rounded-lg flex items-center justify-center shrink-0">
             <Zap size={14} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -172,15 +160,15 @@ export default function StudentPortal() {
 
       <div className="max-w-2xl mx-auto px-4 pt-5">
         {/* Infos élève */}
-        <div className="bg-[#161616] border border-white/8 rounded-2xl p-4 mb-5">
+        <div className="bg-brand-surface border border-brand-border rounded-xl p-4 mb-5">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
-              <span className="text-sm font-bold text-red-400">{student.first_name[0]}{student.last_name[0]}</span>
+            <div className="w-10 h-10 rounded-full bg-brand-red/20 flex items-center justify-center shrink-0">
+              <span className="text-sm font-bold text-brand-red">{student.first_name[0]}{student.last_name[0]}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-white">{student.first_name} {student.last_name}</p>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <span className="text-[11px] font-semibold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">{offreLabel(student.offre)}</span>
+                <OfferBadge offre={student.offre} />
                 {daysLeft !== null && daysLeft >= 0 && (
                   <span className="text-[11px] font-medium text-emerald-400">
                     {daysLeft}j restants
@@ -189,75 +177,70 @@ export default function StudentPortal() {
               </div>
             </div>
           </div>
-          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-red-500 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
+          <div className="h-1.5 bg-brand-border rounded-full overflow-hidden">
+            <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
           </div>
           <p className="text-[11px] text-zinc-600 mt-1.5">Progression du programme · {steps.filter(s => s.status === 'validated').length}/9 étapes validées</p>
         </div>
 
         {/* Étapes */}
         <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 px-1">Les 9 étapes de la méthode</h2>
-        <div className="bg-[#161616] border border-white/8 rounded-2xl overflow-hidden mb-5">
+        <div className="bg-brand-surface border border-brand-border rounded-xl overflow-hidden mb-5">
           {STEPS.map((step, idx) => {
             const stepData = steps.find(s => s.step_number === step.number)
             const status = stepData?.status ?? 'todo'
-            const badge = STATUS_BADGE[status] ?? STATUS_BADGE.todo
             const isExpanded = expandedStep === step.number
             const form = getForm(step.number)
 
             return (
-              <div key={step.number} className={idx > 0 ? 'border-t border-white/5' : ''}>
+              <div key={step.number} className={idx > 0 ? 'border-t border-brand-border' : ''}>
                 <button
                   onClick={() => setExpandedStep(isExpanded ? null : step.number)}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/3 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/5 transition-colors"
                 >
-                  <span className="w-5 h-5 rounded-full bg-white/8 flex items-center justify-center shrink-0 text-[10px] font-bold text-zinc-400">
+                  <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-[10px] font-bold text-zinc-400">
                     {step.number}
                   </span>
                   <span className="flex-1 text-sm font-medium text-white truncate">{step.name}</span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                    <span className={`text-xs font-medium ${badge.text} hidden sm:block`}>{badge.label}</span>
+                  <div className="hidden sm:block shrink-0">
+                    <StatusBadge status={status} />
+                  </div>
+                  <div className="sm:hidden flex items-center gap-1.5 shrink-0">
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      status === 'validated' ? 'bg-emerald-400' :
+                      status === 'in_progress' ? 'bg-blue-400' :
+                      status === 'blocked' ? 'bg-red-500' : 'bg-zinc-500'
+                    }`} />
                   </div>
                   <ChevronRight size={14} className={`text-zinc-600 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                 </button>
 
                 {isExpanded && (
-                  <form onSubmit={e => handleSave(e, step.number)} className="border-t border-white/5 px-4 pb-4 pt-4 space-y-4 bg-white/2">
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1.5">Statut</label>
-                      <select
-                        value={form.status}
-                        onChange={e => patchForm(step.number, { status: e.target.value })}
-                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:border-white/25 appearance-none"
-                      >
-                        {STATUS_OPTIONS.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <form onSubmit={e => handleSave(e, step.number)} className="border-t border-brand-border px-4 pb-4 pt-4 space-y-4 bg-white/5">
+                    <Select
+                      label="Statut"
+                      value={form.status}
+                      onChange={e => patchForm(step.number, { status: e.target.value })}
+                    >
+                      {STATUS_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </Select>
 
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1.5">Notes</label>
-                      <textarea
-                        value={form.note}
-                        onChange={e => patchForm(step.number, { note: e.target.value })}
-                        placeholder="Notes sur cette étape..."
-                        rows={3}
-                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2.5 text-base sm:text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/25 resize-none"
-                      />
-                    </div>
+                    <Textarea
+                      label="Notes"
+                      value={form.note}
+                      onChange={e => patchForm(step.number, { note: e.target.value })}
+                      placeholder="Notes sur cette étape..."
+                      rows={3}
+                    />
 
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1.5">Lien ressource</label>
-                      <input
-                        type="text"
-                        value={form.link}
-                        onChange={e => patchForm(step.number, { link: e.target.value })}
-                        placeholder="https://..."
-                        className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg px-3 py-2.5 text-base sm:text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/25"
-                      />
-                    </div>
+                    <Input
+                      label="Lien ressource"
+                      value={form.link}
+                      onChange={e => patchForm(step.number, { link: e.target.value })}
+                      placeholder="https://..."
+                    />
 
                     <div className="flex justify-end">
                       {saved[step.number] ? (
@@ -265,14 +248,10 @@ export default function StudentPortal() {
                           <CheckCircle2 size={15} />Sauvegardé !
                         </div>
                       ) : (
-                        <button
-                          type="submit"
-                          disabled={saving[step.number]}
-                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
-                        >
-                          {saving[step.number] ? <Loader2 size={14} className="animate-spin" /> : null}
+                        <Button type="submit" disabled={saving[step.number]}>
+                          {saving[step.number] && <Loader2 size={14} className="animate-spin" />}
                           Sauvegarder
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </form>
@@ -283,9 +262,9 @@ export default function StudentPortal() {
         </div>
 
         {/* Feedback général */}
-        <div className="bg-[#161616] border border-white/8 rounded-2xl p-4 mb-4">
+        <div className="bg-brand-surface border border-brand-border rounded-xl p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <MessageSquare size={14} className="text-red-400" />
+            <MessageSquare size={14} className="text-brand-red" />
             <h2 className="text-sm font-bold text-white">Feedback général</h2>
           </div>
           {sentGeneral ? (
@@ -301,23 +280,18 @@ export default function StudentPortal() {
                   <p className="text-sm text-red-400 font-medium">Erreur d'envoi — réessaie.</p>
                 </div>
               )}
-              <textarea
+              <Textarea
                 value={generalMsg}
                 onChange={e => setGeneralMsg(e.target.value)}
                 placeholder="Une question, une suggestion, un retour sur ton expérience..."
                 rows={4}
                 required
-                className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl px-3 py-2.5 text-base sm:text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-white/25 resize-none"
               />
               <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={sendingGeneral || !generalMsg.trim()}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1e1e1e] border border-white/15 hover:border-white/25 text-white text-sm font-semibold transition-colors disabled:opacity-40"
-                >
+                <Button variant="secondary" type="submit" disabled={sendingGeneral || !generalMsg.trim()}>
                   {sendingGeneral ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   {sendingGeneral ? 'Envoi...' : 'Envoyer'}
-                </button>
+                </Button>
               </div>
             </form>
           )}
