@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { STEPS } from '../lib/constants'
+import { STEPS, STEP_STATUS } from '../lib/constants'
 import {
-  Zap, AlertTriangle, ChevronRight,
+  Zap, AlertTriangle, ChevronRight, ExternalLink, Timer,
   MessageSquare, CheckCircle2, Send, Loader2,
 } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
@@ -21,6 +21,58 @@ const STATUS_OPTIONS = [
   { value: 'validated',   label: 'Validé' },
   { value: 'blocked',     label: 'Bloqué' },
 ]
+
+// Sous-composant : feedback général. Factorisé pour être rendu en sidebar (compact)
+// sur desktop ET en bas du portail (full) sur mobile, avec un seul state partagé.
+function FeedbackForm({
+  generalMsg, setGeneralMsg, sendingGeneral, sentGeneral, errorGeneral,
+  onSubmit, compact = false,
+}) {
+  return (
+    <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+      {compact ? (
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Feedback général</p>
+      ) : (
+        <div className="flex items-center gap-2 mb-3">
+          <MessageSquare size={14} className="text-brand-red" />
+          <h2 className="text-sm font-bold text-white">Feedback général</h2>
+        </div>
+      )}
+
+      {sentGeneral ? (
+        <div className="flex items-center gap-2 bg-emerald-950/50 border border-emerald-800/40 rounded-lg px-3 py-2">
+          <CheckCircle2 size={13} className="text-emerald-400" />
+          <p className="text-xs text-emerald-400 font-medium">Feedback envoyé !</p>
+        </div>
+      ) : (
+        <form onSubmit={onSubmit} className="space-y-2">
+          {errorGeneral && (
+            <div className="flex items-center gap-2 bg-red-950/50 border border-red-800/40 rounded-lg px-3 py-2">
+              <AlertTriangle size={13} className="text-red-400" />
+              <p className="text-xs text-red-400 font-medium">Erreur d'envoi — réessaie.</p>
+            </div>
+          )}
+          <Textarea
+            value={generalMsg}
+            onChange={e => setGeneralMsg(e.target.value)}
+            placeholder={compact ? "Une question, un retour..." : "Une question, une suggestion, un retour sur ton expérience..."}
+            rows={compact ? 3 : 4}
+            required
+          />
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={sendingGeneral || !generalMsg.trim()}
+            className="w-full"
+          >
+            {sendingGeneral ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+            {sendingGeneral ? 'Envoi...' : 'Envoyer'}
+          </Button>
+        </form>
+      )}
+    </div>
+  )
+}
 
 export default function StudentPortal() {
   const { token } = useParams()
@@ -120,7 +172,6 @@ export default function StudentPortal() {
       if (startedStep)   nextSteps = nextSteps.map(s => s.step_number === startedStep.step_number   ? startedStep   : s)
       return { ...prev, steps: nextSteps }
     })
-    // Repli sur l'étape suivante automatiquement
     if (startedStep) setExpandedStep(startedStep.step_number)
   }
 
@@ -160,208 +211,284 @@ export default function StudentPortal() {
   )
 
   const { student, steps = [] } = data
-  const progress = steps.length ? Math.round((steps.filter(s => s.status === 'validated').length / 9) * 100) : 0
+  const validatedCount = steps.filter(s => s.status === 'validated').length
+  const progress = steps.length ? Math.round((validatedCount / 9) * 100) : 0
   const endDate = getEndDate(student.offre, student.start_date)
   const daysLeft = endDate ? differenceInDays(endDate, new Date()) : null
+  const programDaysLeft = student.program_end_date
+    ? differenceInDays(new Date(student.program_end_date), new Date())
+    : null
+  const countWithLink = steps.filter(s => s.resource_link).length
+
+  const feedbackProps = {
+    generalMsg, setGeneralMsg, sendingGeneral, sentGeneral, errorGeneral,
+    onSubmit: handleSendGeneral,
+  }
 
   return (
     <div className="min-h-screen bg-brand-dark pb-16">
       {/* Header sticky */}
-      <div className="bg-brand-surface border-b border-brand-border px-4 py-4 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
+      <div className="bg-brand-surface border-b border-brand-border px-4 lg:px-8 py-4 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
           <div className="w-8 h-8 bg-brand-red rounded-lg flex items-center justify-center shrink-0">
             <Zap size={14} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-white leading-none">FastBrand Club</p>
-            <p className="text-[11px] text-zinc-500 mt-0.5 truncate">Suivi de {student.first_name} {student.last_name}</p>
+            <p className="text-xs text-zinc-500 mt-0.5 truncate">Suivi de {student.first_name} {student.last_name}</p>
           </div>
           <div className="text-right shrink-0">
             <p className="text-xs font-bold text-white">{progress}%</p>
-            <p className="text-[10px] text-zinc-600">progression</p>
+            <p className="text-xs text-zinc-600">progression</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-5">
-        {/* Infos élève */}
-        <div className="bg-brand-surface border border-brand-border rounded-xl p-4 mb-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-brand-red/20 flex items-center justify-center shrink-0">
-              <span className="text-sm font-bold text-brand-red">{student.first_name[0]}{student.last_name[0]}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-white">{student.first_name} {student.last_name}</p>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <OfferBadge offre={student.offre} />
-                {daysLeft !== null && daysLeft >= 0 && (
-                  <span className="text-[11px] font-medium text-emerald-400">
-                    {daysLeft}j restants
-                  </span>
-                )}
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 pt-5 lg:pt-6">
+        <div className="lg:grid lg:grid-cols-[320px_1fr] lg:gap-6">
+
+          {/* ============ SIDEBAR — DESKTOP ONLY ============ */}
+          <aside className="hidden lg:flex lg:flex-col lg:gap-3 lg:sticky lg:top-6 lg:self-start
+                            lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+            {/* Card 1 — Identité */}
+            <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-brand-red/20 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-brand-red">{student.first_name[0]}{student.last_name[0]}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{student.first_name} {student.last_name}</p>
+                  <p className="text-xs text-zinc-500">Programme 60 jours</p>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="h-1.5 bg-brand-border rounded-full overflow-hidden">
-            <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="text-[11px] text-zinc-600 mt-1.5">Progression du programme · {steps.filter(s => s.status === 'validated').length}/9 étapes validées</p>
-        </div>
-
-        {/* Étapes */}
-        <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 px-1">Les 9 étapes de la méthode</h2>
-        <div className="bg-brand-surface border border-brand-border rounded-xl overflow-hidden mb-5">
-          {STEPS.map((step, idx) => {
-            const stepData = steps.find(s => s.step_number === step.number)
-            const status = stepData?.status ?? 'todo'
-            const isExpanded = expandedStep === step.number
-            const form = getForm(step.number)
-            const deadlineState = getDeadlineState(stepData, step.number, student.program_end_date)
-            const overdue = deadlineState === 'overdue'
-            const overdueDays = overdue ? Math.abs(daysRemaining(stepData, step.number, student.program_end_date) ?? 0) : 0
-
-            return (
-              <div key={step.number} className={idx > 0 ? 'border-t border-brand-border' : ''}>
-                <button
-                  onClick={() => setExpandedStep(isExpanded ? null : step.number)}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/5 transition-colors"
-                >
-                  <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-[10px] font-bold text-zinc-400">
-                    {step.number}
-                  </span>
-                  <span className="flex-1 text-sm font-medium text-white truncate">{step.name}</span>
-                  {overdue && (
-                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-red/15 text-brand-red border border-brand-red/30">
-                      <AlertTriangle size={10} />
-                      +{overdueDays}j
-                    </span>
-                  )}
-                  <div className="hidden sm:block shrink-0">
-                    <StatusBadge status={status} />
-                  </div>
-                  <div className="sm:hidden flex items-center gap-1.5 shrink-0">
-                    <span className={`w-1.5 h-1.5 rounded-full ${
-                      overdue ? 'bg-brand-red' :
-                      status === 'validated' ? 'bg-emerald-400' :
-                      status === 'in_progress' ? 'bg-blue-400' :
-                      status === 'blocked' ? 'bg-red-500' : 'bg-zinc-500'
-                    }`} />
-                  </div>
-                  <ChevronRight size={14} className={`text-zinc-600 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                </button>
-
-                {isExpanded && (
-                  <form onSubmit={e => handleSave(e, step.number)} className="border-t border-brand-border px-4 pb-4 pt-4 space-y-4 bg-white/5">
-                    {/* Bandeau dépassement */}
-                    {overdue && (
-                      <div className="flex items-start gap-2 rounded-lg border border-brand-red/40 bg-brand-red/10 px-3 py-2">
-                        <AlertTriangle size={13} className="text-brand-red mt-0.5 shrink-0" />
-                        <p className="text-xs text-zinc-300 leading-relaxed">
-                          Tu as dépassé le délai prévu de <strong className="text-brand-red">{overdueDays} jour{overdueDays > 1 ? 's' : ''}</strong>. Tu peux toujours avancer, mais reprends contact avec ta coach pour rester sur les rails.
-                        </p>
-                      </div>
-                    )}
-
-                    <DeadlineTimer
-                      stepNumber={step.number}
-                      stepData={stepData}
-                      programEndDate={student.program_end_date}
-                    />
-
-                    {/* CTA principal : Marquer comme terminé (sauf si déjà validé) */}
-                    {status !== 'validated' && (
-                      <button
-                        type="button"
-                        onClick={() => handleMarkDone(step.number)}
-                        disabled={marking[step.number]}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-brand-red hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
-                      >
-                        {marking[step.number] ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                        Marquer comme terminé
-                      </button>
-                    )}
-
-                    <Select
-                      label="Statut"
-                      value={form.status}
-                      onChange={e => patchForm(step.number, { status: e.target.value })}
-                    >
-                      {STATUS_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </Select>
-
-                    <Textarea
-                      label="Notes"
-                      value={form.note}
-                      onChange={e => patchForm(step.number, { note: e.target.value })}
-                      placeholder="Notes sur cette étape..."
-                      rows={3}
-                    />
-
-                    <Input
-                      label="Lien ressource"
-                      value={form.link}
-                      onChange={e => patchForm(step.number, { link: e.target.value })}
-                      placeholder="https://..."
-                    />
-
-                    <div className="flex justify-end">
-                      {saved[step.number] ? (
-                        <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-medium">
-                          <CheckCircle2 size={15} />Sauvegardé !
-                        </div>
-                      ) : (
-                        <Button variant="secondary" type="submit" disabled={saving[step.number]}>
-                          {saving[step.number] && <Loader2 size={14} className="animate-spin" />}
-                          Sauvegarder
-                        </Button>
-                      )}
-                    </div>
-                  </form>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Feedback général */}
-        <div className="bg-brand-surface border border-brand-border rounded-xl p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <MessageSquare size={14} className="text-brand-red" />
-            <h2 className="text-sm font-bold text-white">Feedback général</h2>
-          </div>
-          {sentGeneral ? (
-            <div className="flex items-center gap-2 bg-emerald-950/50 border border-emerald-800/40 rounded-xl px-4 py-3">
-              <CheckCircle2 size={15} className="text-emerald-400" />
-              <p className="text-sm text-emerald-400 font-medium">Feedback envoyé !</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSendGeneral} className="space-y-3">
-              {errorGeneral && (
-                <div className="flex items-center gap-2 bg-red-950/50 border border-red-800/40 rounded-xl px-4 py-3">
-                  <AlertTriangle size={15} className="text-red-400" />
-                  <p className="text-sm text-red-400 font-medium">Erreur d'envoi — réessaie.</p>
+              {programDaysLeft != null && programDaysLeft >= 0 && (
+                <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                                text-xs font-semibold bg-brand-red/15 text-brand-red border border-brand-red/30">
+                  <Timer size={11} />
+                  {programDaysLeft} jour{programDaysLeft > 1 ? 's' : ''} restant{programDaysLeft > 1 ? 's' : ''}
                 </div>
               )}
-              <Textarea
-                value={generalMsg}
-                onChange={e => setGeneralMsg(e.target.value)}
-                placeholder="Une question, une suggestion, un retour sur ton expérience..."
-                rows={4}
-                required
-              />
-              <div className="flex justify-end">
-                <Button variant="secondary" type="submit" disabled={sendingGeneral || !generalMsg.trim()}>
-                  {sendingGeneral ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                  {sendingGeneral ? 'Envoi...' : 'Envoyer'}
-                </Button>
-              </div>
-            </form>
-          )}
-        </div>
+            </div>
 
-        <p className="text-center text-[11px] text-zinc-700 pb-4">FastBrand Club · Lien personnel — ne pas partager</p>
+            {/* Card 2 — Progression */}
+            <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Progression</p>
+              <p className="text-2xl font-bold text-white leading-none">{progress}%</p>
+              <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
+              </div>
+              <p className="text-xs text-zinc-500 mt-2">{validatedCount} / 9 étapes validées</p>
+            </div>
+
+            {/* Card 3 — Mes documents */}
+            <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Mes documents</p>
+                <span className="text-xs font-bold text-brand-red bg-brand-red/15 px-1.5 py-0.5 rounded-full">
+                  {countWithLink}/9
+                </span>
+              </div>
+              <div className="space-y-1.5 max-h-72 overflow-y-auto">
+                {STEPS.map(step => {
+                  const sd = steps.find(s => s.step_number === step.number)
+                  const link = sd?.resource_link
+                  const status = sd?.status ?? 'todo'
+                  const cfg = STEP_STATUS[status] ?? STEP_STATUS.todo
+                  if (link) {
+                    return (
+                      <a
+                        key={step.number}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={link}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors"
+                      >
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${cfg.bg} ${cfg.text}`}>
+                          {step.number}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-white font-medium truncate">{step.name}</p>
+                          <p className="text-xs text-zinc-500 truncate">{link}</p>
+                        </div>
+                        <ExternalLink size={11} className="text-zinc-500 shrink-0" />
+                      </a>
+                    )
+                  }
+                  return (
+                    <div key={step.number} className="flex items-center gap-2 px-2 py-1.5 opacity-40">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-zinc-800 text-zinc-500">
+                        {step.number}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-zinc-400 truncate">{step.name}</p>
+                        <p className="text-xs text-zinc-600 italic">Pas encore de lien</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Card 4 — Feedback général (compact) */}
+            <FeedbackForm {...feedbackProps} compact />
+          </aside>
+
+          {/* ============ MAIN ============ */}
+          <main>
+            {/* Identité combinée — MOBILE ONLY (look actuel inchangé) */}
+            <div className="lg:hidden mb-5">
+              <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-brand-red/20 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-bold text-brand-red">{student.first_name[0]}{student.last_name[0]}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white">{student.first_name} {student.last_name}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <OfferBadge offre={student.offre} />
+                      {daysLeft !== null && daysLeft >= 0 && (
+                        <span className="text-xs font-medium text-emerald-400">
+                          {daysLeft}j restants
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="h-1.5 bg-brand-border rounded-full overflow-hidden">
+                  <div className="h-full bg-brand-red rounded-full transition-all" style={{ width: `${progress}%` }} />
+                </div>
+                <p className="text-xs text-zinc-600 mt-1.5">Progression du programme · {validatedCount}/9 étapes validées</p>
+              </div>
+            </div>
+
+            {/* Étapes — toujours visible */}
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 px-1">
+              Les 9 étapes de la méthode
+            </h2>
+            <div className="bg-brand-surface border border-brand-border rounded-xl overflow-hidden mb-5">
+              {STEPS.map((step, idx) => {
+                const stepData = steps.find(s => s.step_number === step.number)
+                const status = stepData?.status ?? 'todo'
+                const isExpanded = expandedStep === step.number
+                const form = getForm(step.number)
+                const deadlineState = getDeadlineState(stepData, step.number, student.program_end_date)
+                const overdue = deadlineState === 'overdue'
+                const overdueDays = overdue ? Math.abs(daysRemaining(stepData, step.number, student.program_end_date) ?? 0) : 0
+
+                return (
+                  <div key={step.number} className={idx > 0 ? 'border-t border-brand-border' : ''}>
+                    <button
+                      onClick={() => setExpandedStep(isExpanded ? null : step.number)}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/5 transition-colors"
+                    >
+                      <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-xs font-bold text-zinc-400">
+                        {step.number}
+                      </span>
+                      <span className="flex-1 text-sm font-medium text-white truncate">{step.name}</span>
+                      {overdue && (
+                        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-brand-red/15 text-brand-red border border-brand-red/30">
+                          <AlertTriangle size={10} />
+                          +{overdueDays}j
+                        </span>
+                      )}
+                      <div className="hidden sm:block shrink-0">
+                        <StatusBadge status={status} />
+                      </div>
+                      <div className="sm:hidden flex items-center gap-1.5 shrink-0">
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          overdue ? 'bg-brand-red' :
+                          status === 'validated' ? 'bg-emerald-400' :
+                          status === 'in_progress' ? 'bg-blue-400' :
+                          status === 'blocked' ? 'bg-red-500' : 'bg-zinc-500'
+                        }`} />
+                      </div>
+                      <ChevronRight size={14} className={`text-zinc-600 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                    </button>
+
+                    {isExpanded && (
+                      <form onSubmit={e => handleSave(e, step.number)} className="border-t border-brand-border px-4 pb-4 pt-4 space-y-4 bg-white/5">
+                        {overdue && (
+                          <div className="flex items-start gap-2 rounded-lg border border-brand-red/40 bg-brand-red/10 px-3 py-2">
+                            <AlertTriangle size={13} className="text-brand-red mt-0.5 shrink-0" />
+                            <p className="text-xs text-zinc-300 leading-relaxed">
+                              Tu as dépassé le délai prévu de <strong className="text-brand-red">{overdueDays} jour{overdueDays > 1 ? 's' : ''}</strong>. Tu peux toujours avancer, mais reprends contact avec ta coach pour rester sur les rails.
+                            </p>
+                          </div>
+                        )}
+
+                        <DeadlineTimer
+                          stepNumber={step.number}
+                          stepData={stepData}
+                          programEndDate={student.program_end_date}
+                        />
+
+                        {status !== 'validated' && (
+                          <Button
+                            variant="primary"
+                            type="button"
+                            onClick={() => handleMarkDone(step.number)}
+                            disabled={marking[step.number]}
+                            className="w-full py-3"
+                          >
+                            {marking[step.number] ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                            Marquer comme terminé
+                          </Button>
+                        )}
+
+                        <Select
+                          label="Statut"
+                          value={form.status}
+                          onChange={e => patchForm(step.number, { status: e.target.value })}
+                        >
+                          {STATUS_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </Select>
+
+                        <Textarea
+                          label="Notes"
+                          value={form.note}
+                          onChange={e => patchForm(step.number, { note: e.target.value })}
+                          placeholder="Notes sur cette étape..."
+                          rows={3}
+                        />
+
+                        <Input
+                          label="Lien ressource"
+                          value={form.link}
+                          onChange={e => patchForm(step.number, { link: e.target.value })}
+                          placeholder="https://..."
+                        />
+
+                        <div className="flex justify-end">
+                          {saved[step.number] ? (
+                            <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-medium">
+                              <CheckCircle2 size={15} />Sauvegardé !
+                            </div>
+                          ) : (
+                            <Button variant="secondary" type="submit" disabled={saving[step.number]}>
+                              {saving[step.number] && <Loader2 size={14} className="animate-spin" />}
+                              Sauvegarder
+                            </Button>
+                          )}
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Feedback — MOBILE ONLY */}
+            <div className="lg:hidden mb-4">
+              <FeedbackForm {...feedbackProps} />
+            </div>
+
+            <p className="text-center text-xs text-zinc-700 pb-4">FastBrand Club · Lien personnel — ne pas partager</p>
+          </main>
+
+        </div>
       </div>
     </div>
   )
