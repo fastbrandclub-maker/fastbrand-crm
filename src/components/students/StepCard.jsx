@@ -19,6 +19,8 @@ export default function StepCard({
   readOnly,
   onUpdate,
   onEditDeadline,
+  onDevalidate,
+  lastDevalidation,
 }) {
   const { profile } = useAuth()
   const [open, setOpen] = useState(stepData?.status === 'in_progress' || stepData?.status === 'blocked')
@@ -71,7 +73,16 @@ export default function StepCard({
     if (startedStep) onUpdate(startedStep)
   }
 
-  async function handleDevalidate() {
+  function handleDevalidateClick() {
+    if (onDevalidate) {
+      onDevalidate(step, stepData)
+      return
+    }
+    // Fallback (sans modal parent) — ne devrait pas arriver côté coach
+    handleDevalidateInline()
+  }
+
+  async function handleDevalidateInline() {
     if (!window.confirm(`Dévalider l'étape "${step.name}" ?`)) return
     setActing(true)
     const { data, resetStep } = await devalidateStep({
@@ -168,6 +179,17 @@ export default function StepCard({
             </div>
           )}
 
+          {/* Dernière dévalidation */}
+          {lastDevalidation && (
+            <div
+              title={lastDevalidation.reason ? `Raison : ${lastDevalidation.reason}` : ''}
+              className="text-[11px] text-zinc-500 inline-flex items-center gap-1"
+            >
+              <RotateCcw size={10} />
+              Dévalidée le {lastDevalidation.date} par la coach
+            </div>
+          )}
+
           {readOnly ? (
             <>
               <div className="flex items-center gap-2">
@@ -246,7 +268,7 @@ export default function StepCard({
               {/* Actions */}
               <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-brand-border">
                 {form.status === 'validated' ? (
-                  <Button variant="secondary" size="sm" onClick={handleDevalidate} disabled={acting}>
+                  <Button variant="secondary" size="sm" onClick={handleDevalidateClick} disabled={acting}>
                     <RotateCcw size={12} />
                     Dévalider
                   </Button>

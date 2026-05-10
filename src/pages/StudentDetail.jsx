@@ -27,7 +27,7 @@ import StudentForm from '../components/students/StudentForm'
 import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
 import Input, { Textarea, Select } from '../components/ui/Input'
-import { updateStepDeadline } from '../lib/stepActions'
+import { updateStepDeadline, devalidateStep } from '../lib/stepActions'
 import { DEFAULT_STEP_DEADLINES } from '../config/programDefaults'
 import { format, formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -39,6 +39,7 @@ export default function StudentDetail() {
 
   const [student, setStudent] = useState(null)
   const [steps, setSteps] = useState([])
+  const [stepHistory, setStepHistory] = useState([])
   const [calls, setCalls] = useState([])
   const [notes, setNotes] = useState([])
   const [studentMessages, setStudentMessages] = useState([])
@@ -61,6 +62,59 @@ export default function StudentDetail() {
   const [deadlineDays, setDeadlineDays] = useState('')
   const [deadlineReason, setDeadlineReason] = useState('')
   const [savingDeadline, setSavingDeadline] = useState(false)
+
+  // Modal "Dévalider"
+  const [devalidateTarget, setDevalidateTarget] = useState(null)  // { step, stepData } | null
+  const [devalidateReason, setDevalidateReason] = useState('')
+  const [savingDevalidate, setSavingDevalidate] = useState(false)
+
+  function openDevalidate(step, stepData) {
+    setDevalidateTarget({ step, stepData })
+    setDevalidateReason('')
+  }
+
+  async function confirmDevalidate() {
+    if (!devalidateTarget) return
+    setSavingDevalidate(true)
+    const { data, resetStep } = await devalidateStep({
+      studentId: id,
+      stepNumber: devalidateTarget.step.number,
+      programEndDate: student.program_end_date,
+      customDelayDays: devalidateTarget.stepData?.custom_delay_days,
+      actorId: profile?.id,
+      reason: devalidateReason.trim() || null,
+    })
+    setSavingDevalidate(false)
+    if (data) setSteps(prev => prev.map(s => s.step_number === data.step_number ? data : s))
+    if (resetStep) setSteps(prev => prev.map(s => s.step_number === resetStep.step_number ? resetStep : s))
+    setDevalidateTarget(null)
+    // Refresh history pour voir l'entrée 'devalidated'
+    loadStepHistory()
+  }
+
+  async function loadStepHistory() {
+    if (!steps.length) return
+    const stepIds = steps.map(s => s.id).filter(Boolean)
+    if (stepIds.length === 0) return
+    const { data } = await supabase
+      .from('step_history')
+      .select('*')
+      .in('student_step_id', stepIds)
+      .order('created_at', { ascending: false })
+    setStepHistory(data ?? [])
+  }
+
+  // Map step_number → dernière dévalidation { date, reason }
+  function lastDevalidationFor(stepNumber) {
+    const stepRow = steps.find(s => s.step_number === stepNumber)
+    if (!stepRow) return null
+    const entry = stepHistory.find(h => h.student_step_id === stepRow.id && h.action === 'devalidated')
+    if (!entry) return null
+    return {
+      date: format(new Date(entry.created_at), 'd MMM yyyy', { locale: fr }),
+      reason: entry.reason,
+    }
+  }
 
   function openEditDeadline(step, stepData) {
     setEditDeadline({ step, stepData })
@@ -124,6 +178,12 @@ export default function StudentDetail() {
     setStudentMessages(messagesRes.data ?? [])
     setLoading(false)
   }
+
+  // Recharge step_history dès qu'on a les steps (à l'init et après devalidation)
+  useEffect(() => {
+    loadStepHistory()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [steps.length, steps.map(s => s.id).join(',')])
 
   useEffect(() => {
     loadData()
@@ -413,6 +473,8 @@ export default function StudentDetail() {
               readOnly={isReadOnly}
               onUpdate={handleStepUpdate}
               onEditDeadline={isCoach ? openEditDeadline : undefined}
+              onDevalidate={isCoach ? openDevalidate : undefined}
+              lastDevalidation={lastDevalidationFor(step.number)}
             />
           ))}
         </div>
@@ -740,6 +802,40 @@ export default function StudentDetail() {
           </div>
           )
         })()}
+      </Modal>
+
+      {/* Modal dévalider une étape */}
+      <Modal
+        open={!!devalidateTarget}
+        onClose={() => setDevalidateTarget(null)}
+        title="Dévalider cette étape ?"
+        size="sm"
+      >
+        {devalidateTarget && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 bg-amber-950/30 border border-amber-800/40 rounded-lg p-3">
+              <AlertIcon size={14} className="text-amber-400 mt-0.5 shrink-0" />
+              <p className="text-xs text-zinc-300">
+                <strong className="text-white">{devalidateTarget.step.name}</strong> repassera en
+                « En cours » et le timer redémarrera. Si l'étape suivante est en cours, elle sera
+                remise en attente.
+              </p>
+            </div>
+            <Textarea
+              label="Raison (optionnel)"
+              value={devalidateReason}
+              onChange={e => setDevalidateReason(e.target.value)}
+              placeholder="Ex : besoin d'approfondir avec l'élève..."
+              rows={3}
+            />
+            <div className="flex justify-end gap-2 pt-2 border-t border-brand-border">
+              <Button variant="secondary" onClick={() => setDevalidateTarget(null)}>Annuler</Button>
+              <Button variant="danger" onClick={confirmDevalidate} disabled={savingDevalidate}>
+                {savingDevalidate ? 'Dévalidation...' : 'Confirmer'}
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )
