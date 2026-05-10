@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { STEPS, STEP_STATUS } from '../lib/constants'
 import {
   Zap, AlertTriangle, ChevronRight, ExternalLink, Timer,
-  MessageSquare, CheckCircle2, Send, Loader2,
+  MessageSquare, CheckCircle2, Send, Loader2, Pencil,
 } from 'lucide-react'
 import { differenceInDays, format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -19,6 +19,8 @@ import {
 } from '../lib/deadlines'
 import { markStepValidated } from '../lib/stepActions'
 import { DEFAULT_STEP_DEADLINES } from '../config/programDefaults'
+import { useAuth } from '../context/AuthContext'
+import EditDeadlineModal from '../components/students/EditDeadlineModal'
 
 const STATUS_OPTIONS = [
   { value: 'todo',        label: 'À faire' },
@@ -144,6 +146,9 @@ function FeedbackForm({
 
 export default function StudentPortal() {
   const { token } = useParams()
+  const { profile, isCoach } = useAuth()
+  const canEditDeadlines = isCoach && !!profile
+
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -156,6 +161,16 @@ export default function StudentPortal() {
   const [sentGeneral, setSentGeneral] = useState(false)
   const [errorGeneral, setErrorGeneral] = useState(false)
   const [marking, setMarking] = useState({})
+
+  // Modal "Modifier le délai" (admin/coach uniquement)
+  const [editTarget, setEditTarget] = useState(null) // { step, stepData } | null
+
+  function handleStepRefreshed(updatedStep) {
+    setData(prev => prev ? {
+      ...prev,
+      steps: prev.steps.map(s => s.step_number === updatedStep.step_number ? updatedStep : s),
+    } : prev)
+  }
 
   useEffect(() => {
     async function load() {
@@ -402,9 +417,12 @@ export default function StudentPortal() {
 
                 return (
                   <div key={step.number} className={idx > 0 ? 'border-t border-brand-border' : ''}>
-                    <button
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setExpandedStep(isExpanded ? null : step.number)}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/5 transition-colors"
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedStep(isExpanded ? null : step.number) } }}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/5 transition-colors cursor-pointer select-none"
                     >
                       <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-xs font-bold text-zinc-400">
                         {step.number}
@@ -427,8 +445,18 @@ export default function StudentPortal() {
                           status === 'blocked' ? 'bg-red-500' : 'bg-zinc-500'
                         }`} />
                       </div>
+                      {canEditDeadlines && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setEditTarget({ step, stepData }) }}
+                          title="Modifier le délai (admin/coach)"
+                          className="p-1.5 rounded-md text-zinc-500 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                        >
+                          <Pencil size={12} />
+                        </button>
+                      )}
                       <ChevronRight size={14} className={`text-zinc-600 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                    </button>
+                    </div>
 
                     {isExpanded && (
                       <form onSubmit={e => handleSave(e, step.number)} className="border-t border-brand-border px-4 pb-4 pt-4 space-y-4 bg-white/5">
@@ -571,6 +599,19 @@ export default function StudentPortal() {
 
         </div>
       </div>
+
+      {/* Modal édition délai — admin/coach connecté uniquement */}
+      {canEditDeadlines && (
+        <EditDeadlineModal
+          open={!!editTarget}
+          onClose={() => setEditTarget(null)}
+          step={editTarget?.step}
+          stepData={editTarget?.stepData}
+          studentId={student.id}
+          actorId={profile?.id}
+          onSaved={handleStepRefreshed}
+        />
+      )}
     </div>
   )
 }
