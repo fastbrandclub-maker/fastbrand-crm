@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../ui/Button'
 import Input, { Select } from '../ui/Input'
+import { getEndDate } from './OfferTimer'
 
 export default function StudentForm({ student, onSave, onCancel }) {
   const { profile, isAdmin } = useAuth()
@@ -38,9 +39,11 @@ export default function StudentForm({ student, onSave, onCancel }) {
     setLoading(true)
     setError('')
 
+    const endDate = getEndDate(form.offre, form.start_date)
     const payload = {
       ...form,
       coach_id: form.coach_id || profile?.id,
+      program_end_date: endDate ? endDate.toISOString() : null,
     }
 
     let result
