@@ -8,6 +8,8 @@ import { formatDistanceToNow, differenceInDays, format, isThisWeek } from 'date-
 import { fr } from 'date-fns/locale'
 import { getEndDate, OfferBadge } from '../components/students/OfferTimer'
 import RelanceButton from '../components/students/RelanceButton'
+import { getDeadlineState, daysRemaining } from '../lib/deadlines'
+import { differenceInCalendarDays } from 'date-fns'
 
 function StatCard({ icon: Icon, label, value, color = 'text-white' }) {
   return (
@@ -106,6 +108,22 @@ export default function Dashboard() {
     const end = getEndDate(s.offre, s.start_date)
     return end && differenceInDays(new Date(), end) >= 0 && !dismissedExpired.has(s.id)
   })
+
+  // Élèves avec au moins une étape overdue, triés par jours de retard décroissants
+  const overdueData = students
+    .map(s => {
+      const overdues = (s.student_steps || [])
+        .filter(st => getDeadlineState(st, st.step_number, s.program_end_date) === 'overdue')
+        .map(st => ({
+          step: st,
+          daysLate: Math.abs(daysRemaining(st, st.step_number, s.program_end_date) ?? 0),
+        }))
+      if (overdues.length === 0) return null
+      const worst = overdues.reduce((acc, x) => (x.daysLate > acc.daysLate ? x : acc), overdues[0])
+      return { student: s, step: worst.step, daysLate: worst.daysLate, count: overdues.length }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.daysLate - a.daysLate)
 
   function dismissExpired(id) {
     const next = new Set([...dismissedExpired, id])
@@ -309,6 +327,43 @@ export default function Dashboard() {
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {overdueData.length > 0 && (
+            <div className="bg-brand-surface border border-brand-red/40 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle size={13} className="text-brand-red" />
+                <p className="text-sm font-semibold text-white">Élèves en retard</p>
+                <span className="text-xs font-bold text-brand-red bg-brand-red/15 px-1.5 py-0.5 rounded-full">{overdueData.length}</span>
+              </div>
+              <div className="space-y-2">
+                {overdueData.map(({ student: s, step, daysLate, count }) => {
+                  const stepName = STEPS[step.step_number - 1]?.name
+                  return (
+                    <div key={s.id} className="flex items-center justify-between gap-2 group">
+                      <Link to={`/students/${s.id}`} className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white group-hover:text-brand-red transition-colors truncate">
+                          {s.first_name} {s.last_name}
+                        </p>
+                        <p className="text-xs text-zinc-500 truncate">
+                          Étape {step.step_number} — {stepName}
+                          {count > 1 && <span className="text-zinc-600"> · +{count - 1} autre{count > 2 ? 's' : ''}</span>}
+                        </p>
+                      </Link>
+                      <span className="text-xs font-bold text-brand-red bg-brand-red/10 border border-brand-red/30 px-2 py-0.5 rounded-md shrink-0">
+                        +{daysLate}j
+                      </span>
+                      <Link
+                        to={`/students/${s.id}`}
+                        className="px-2 py-0.5 rounded-md text-xs font-semibold bg-white/5 border border-brand-border text-zinc-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                      >
+                        Voir
+                      </Link>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 
