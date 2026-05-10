@@ -28,6 +28,7 @@ import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
 import Input, { Textarea, Select } from '../components/ui/Input'
 import { updateStepDeadline } from '../lib/stepActions'
+import { DEFAULT_STEP_DEADLINES } from '../config/programDefaults'
 import { format, formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -694,15 +695,25 @@ export default function StudentDetail() {
         title={editDeadline ? `Modifier le délai — Étape ${editDeadline.step.number}` : ''}
         size="sm"
       >
-        {editDeadline && (
+        {editDeadline && (() => {
+          const cfg = DEFAULT_STEP_DEADLINES[editDeadline.step.number]
+          const defaultLabel = typeof cfg?.days === 'number' ? `${cfg.days}j` : (cfg?.days === 'program_end' ? 'fin du programme' : '—')
+          const currentDays = editDeadline.stepData?.custom_delay_days ?? (typeof cfg?.days === 'number' ? cfg.days : null)
+          const currentLabel = currentDays != null ? `${currentDays}j` : defaultLabel
+          return (
           <div className="space-y-4">
             <p className="text-sm text-zinc-400">
               Étape : <strong className="text-white">{editDeadline.step.name}</strong>
             </p>
+            <div className="text-xs text-zinc-500 bg-brand-dark border border-brand-border rounded-md px-3 py-2 flex items-center justify-between">
+              <span>Délai par défaut : <strong className="text-zinc-300">{defaultLabel}</strong></span>
+              <span>Délai actuel : <strong className="text-white">{currentLabel}</strong></span>
+            </div>
             <Input
               label="Nouveau délai (jours)"
               type="number"
-              min="0"
+              min="1"
+              max="60"
               value={deadlineDays}
               onChange={e => setDeadlineDays(e.target.value)}
               placeholder="ex: 7"
@@ -727,7 +738,8 @@ export default function StudentDetail() {
               </Button>
             </div>
           </div>
-        )}
+          )
+        })()}
       </Modal>
     </div>
   )

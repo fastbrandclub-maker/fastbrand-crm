@@ -105,10 +105,13 @@ export default function StepCard({
 
   return (
     <div className={`border rounded-lg overflow-hidden transition-colors ${borderColor}`}>
-      {/* Header */}
-      <button
+      {/* Header — div + role=button pour permettre un bouton crayon imbriqué */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-brand-card hover:bg-white/5 transition-colors text-left"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o) } }}
+        className="w-full flex items-center gap-3 px-4 py-3 bg-brand-card hover:bg-white/5 transition-colors text-left cursor-pointer select-none"
       >
         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${statusConfig.bg} ${statusConfig.text}`}>
           {step.number}
@@ -121,8 +124,17 @@ export default function StepCard({
           </span>
         )}
         <StatusBadge status={form.status} />
+        {!readOnly && onEditDeadline && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEditDeadline(step, stepData) }}
+            title="Modifier le délai"
+            className="p-1.5 rounded-md text-zinc-500 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+          >
+            <Pencil size={12} />
+          </button>
+        )}
         {open ? <ChevronDown size={14} className="text-zinc-500 ml-1 shrink-0" /> : <ChevronRight size={14} className="text-zinc-500 ml-1 shrink-0" />}
-      </button>
+      </div>
 
       {/* Body */}
       {open && (
@@ -233,12 +245,6 @@ export default function StepCard({
 
               {/* Actions */}
               <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-brand-border">
-                {onEditDeadline && (stepData?.started_at || stepData?.status === 'in_progress' || stepData?.status === 'blocked') && (
-                  <Button variant="ghost" size="sm" onClick={() => onEditDeadline(step, stepData)}>
-                    <Pencil size={12} />
-                    Modifier le délai
-                  </Button>
-                )}
                 {form.status === 'validated' ? (
                   <Button variant="secondary" size="sm" onClick={handleDevalidate} disabled={acting}>
                     <RotateCcw size={12} />
