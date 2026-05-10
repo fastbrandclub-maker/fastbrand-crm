@@ -11,6 +11,9 @@ import { getEndDate, OfferBadge } from '../components/students/OfferTimer'
 import { StatusBadge } from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Input, { Textarea, Select } from '../components/ui/Input'
+import DeadlineTimer from '../components/ui/DeadlineTimer'
+import { getDeadlineState, daysRemaining } from '../lib/deadlines'
+import { markStepValidated } from '../lib/stepActions'
 
 const STATUS_OPTIONS = [
   { value: 'todo',        label: 'À faire' },
@@ -32,6 +35,7 @@ export default function StudentPortal() {
   const [sendingGeneral, setSendingGeneral] = useState(false)
   const [sentGeneral, setSentGeneral] = useState(false)
   const [errorGeneral, setErrorGeneral] = useState(false)
+  const [marking, setMarking] = useState({})
 
   useEffect(() => {
     async function load() {
@@ -97,6 +101,26 @@ export default function StudentPortal() {
     setSaving(s => ({ ...s, [stepNum]: false }))
     setSaved(s => ({ ...s, [stepNum]: true }))
     setTimeout(() => setSaved(s => ({ ...s, [stepNum]: false })), 2500)
+  }
+
+  async function handleMarkDone(stepNum) {
+    setMarking(m => ({ ...m, [stepNum]: true }))
+    const { validatedStep, startedStep } = await markStepValidated({
+      studentId: data.student.id,
+      stepNumber: stepNum,
+      by: 'student',
+      programEndDate: data.student.program_end_date,
+    })
+    setMarking(m => ({ ...m, [stepNum]: false }))
+    setData(prev => {
+      if (!prev) return prev
+      let nextSteps = prev.steps
+      if (validatedStep) nextSteps = nextSteps.map(s => s.step_number === validatedStep.step_number ? validatedStep : s)
+      if (startedStep)   nextSteps = nextSteps.map(s => s.step_number === startedStep.step_number   ? startedStep   : s)
+      return { ...prev, steps: nextSteps }
+    })
+    // Repli sur l'étape suivante automatiquement
+    if (startedStep) setExpandedStep(startedStep.step_number)
   }
 
   async function handleSendGeneral(e) {
@@ -191,6 +215,9 @@ export default function StudentPortal() {
             const status = stepData?.status ?? 'todo'
             const isExpanded = expandedStep === step.number
             const form = getForm(step.number)
+            const deadlineState = getDeadlineState(stepData, step.number, student.program_end_date)
+            const overdue = deadlineState === 'overdue'
+            const overdueDays = overdue ? Math.abs(daysRemaining(stepData, step.number, student.program_end_date) ?? 0) : 0
 
             return (
               <div key={step.number} className={idx > 0 ? 'border-t border-brand-border' : ''}>
@@ -202,11 +229,18 @@ export default function StudentPortal() {
                     {step.number}
                   </span>
                   <span className="flex-1 text-sm font-medium text-white truncate">{step.name}</span>
+                  {overdue && (
+                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-red/15 text-brand-red border border-brand-red/30">
+                      <AlertTriangle size={10} />
+                      +{overdueDays}j
+                    </span>
+                  )}
                   <div className="hidden sm:block shrink-0">
                     <StatusBadge status={status} />
                   </div>
                   <div className="sm:hidden flex items-center gap-1.5 shrink-0">
                     <span className={`w-1.5 h-1.5 rounded-full ${
+                      overdue ? 'bg-brand-red' :
                       status === 'validated' ? 'bg-emerald-400' :
                       status === 'in_progress' ? 'bg-blue-400' :
                       status === 'blocked' ? 'bg-red-500' : 'bg-zinc-500'
@@ -217,6 +251,35 @@ export default function StudentPortal() {
 
                 {isExpanded && (
                   <form onSubmit={e => handleSave(e, step.number)} className="border-t border-brand-border px-4 pb-4 pt-4 space-y-4 bg-white/5">
+                    {/* Bandeau dépassement */}
+                    {overdue && (
+                      <div className="flex items-start gap-2 rounded-lg border border-brand-red/40 bg-brand-red/10 px-3 py-2">
+                        <AlertTriangle size={13} className="text-brand-red mt-0.5 shrink-0" />
+                        <p className="text-xs text-zinc-300 leading-relaxed">
+                          Tu as dépassé le délai prévu de <strong className="text-brand-red">{overdueDays} jour{overdueDays > 1 ? 's' : ''}</strong>. Tu peux toujours avancer, mais reprends contact avec ta coach pour rester sur les rails.
+                        </p>
+                      </div>
+                    )}
+
+                    <DeadlineTimer
+                      stepNumber={step.number}
+                      stepData={stepData}
+                      programEndDate={student.program_end_date}
+                    />
+
+                    {/* CTA principal : Marquer comme terminé (sauf si déjà validé) */}
+                    {status !== 'validated' && (
+                      <button
+                        type="button"
+                        onClick={() => handleMarkDone(step.number)}
+                        disabled={marking[step.number]}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-brand-red hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                      >
+                        {marking[step.number] ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                        Marquer comme terminé
+                      </button>
+                    )}
+
                     <Select
                       label="Statut"
                       value={form.status}
@@ -248,7 +311,7 @@ export default function StudentPortal() {
                           <CheckCircle2 size={15} />Sauvegardé !
                         </div>
                       ) : (
-                        <Button type="submit" disabled={saving[step.number]}>
+                        <Button variant="secondary" type="submit" disabled={saving[step.number]}>
                           {saving[step.number] && <Loader2 size={14} className="animate-spin" />}
                           Sauvegarder
                         </Button>
