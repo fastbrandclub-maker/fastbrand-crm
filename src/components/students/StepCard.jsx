@@ -1,22 +1,33 @@
 import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronRight, ExternalLink, Save } from 'lucide-react'
+import { ChevronDown, ChevronRight, ExternalLink, Save, CheckCircle2, RotateCcw, Pencil, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { STEP_STATUS } from '../../lib/constants'
 import { StatusBadge } from '../ui/Badge'
 import { Select, Textarea } from '../ui/Input'
 import Input from '../ui/Input'
 import Button from '../ui/Button'
+import DeadlineTimer from '../ui/DeadlineTimer'
+import { getDeadlineState, daysRemaining } from '../../lib/deadlines'
+import { markStepValidated, devalidateStep } from '../../lib/stepActions'
 
-export default function StepCard({ step, stepData, studentId, readOnly, onUpdate }) {
+export default function StepCard({
+  step,
+  stepData,
+  studentId,
+  programEndDate,
+  readOnly,
+  onUpdate,
+  onEditDeadline,
+}) {
   const [open, setOpen] = useState(stepData?.status === 'in_progress' || stepData?.status === 'blocked')
   const [saving, setSaving] = useState(false)
+  const [acting, setActing] = useState(false)
   const [form, setForm] = useState({
     status: stepData?.status ?? 'todo',
     notes: stepData?.notes ?? '',
     resource_link: stepData?.resource_link ?? '',
   })
 
-  // Sync when stepData changes (e.g. student updates via portal)
   useEffect(() => {
     setForm({
       status: stepData?.status ?? 'todo',
@@ -44,22 +55,51 @@ export default function StepCard({ step, stepData, studentId, readOnly, onUpdate
     if (!error && data) onUpdate(data)
   }
 
+  async function handleMarkDone() {
+    setActing(true)
+    const { validatedStep, startedStep } = await markStepValidated({
+      studentId,
+      stepNumber: step.number,
+      by: 'coach',
+      programEndDate,
+    })
+    setActing(false)
+    if (validatedStep) onUpdate(validatedStep)
+    if (startedStep) onUpdate(startedStep)
+  }
+
+  async function handleDevalidate() {
+    if (!window.confirm(`Dévalider l'étape "${step.name}" ?`)) return
+    setActing(true)
+    const { data } = await devalidateStep({
+      studentId,
+      stepNumber: step.number,
+      programEndDate,
+      customDelayDays: stepData?.custom_delay_days,
+    })
+    setActing(false)
+    if (data) onUpdate(data)
+  }
+
   const statusConfig = STEP_STATUS[form.status] ?? STEP_STATUS.todo
   const hasChanged =
     form.status !== (stepData?.status ?? 'todo') ||
     form.notes !== (stepData?.notes ?? '') ||
     form.resource_link !== (stepData?.resource_link ?? '')
 
+  const deadlineState = getDeadlineState(stepData, step.number, programEndDate)
+  const overdue = deadlineState === 'overdue'
+  const overdueDays = overdue ? Math.abs(daysRemaining(stepData, step.number, programEndDate) ?? 0) : 0
+
+  const borderColor = overdue
+    ? 'border-brand-red/60'
+    : form.status === 'blocked'   ? 'border-red-800/50'
+    : form.status === 'validated' ? 'border-emerald-800/30'
+    : form.status === 'in_progress' ? 'border-blue-800/40'
+    : 'border-brand-border'
+
   return (
-    <div className={`border rounded-lg overflow-hidden transition-colors ${
-      form.status === 'blocked'
-        ? 'border-red-800/50'
-        : form.status === 'validated'
-        ? 'border-emerald-800/30'
-        : form.status === 'in_progress'
-        ? 'border-blue-800/40'
-        : 'border-brand-border'
-    }`}>
+    <div className={`border rounded-lg overflow-hidden transition-colors ${borderColor}`}>
       {/* Header */}
       <button
         onClick={() => setOpen(o => !o)}
@@ -69,6 +109,12 @@ export default function StepCard({ step, stepData, studentId, readOnly, onUpdate
           {step.number}
         </span>
         <span className="flex-1 text-sm font-medium text-white">{step.name}</span>
+        {overdue && (
+          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-red/15 text-brand-red border border-brand-red/30">
+            <AlertTriangle size={10} />
+            +{overdueDays}j
+          </span>
+        )}
         <StatusBadge status={form.status} />
         {open ? <ChevronDown size={14} className="text-zinc-500 ml-1 shrink-0" /> : <ChevronRight size={14} className="text-zinc-500 ml-1 shrink-0" />}
       </button>
@@ -76,6 +122,35 @@ export default function StepCard({ step, stepData, studentId, readOnly, onUpdate
       {/* Body */}
       {open && (
         <div className="px-4 py-4 border-t border-brand-border space-y-3 bg-brand-surface">
+          {/* Bandeau overdue */}
+          {overdue && (
+            <div className="flex items-start gap-2 rounded-lg border border-brand-red/40 bg-brand-red/10 px-3 py-2">
+              <AlertTriangle size={13} className="text-brand-red mt-0.5 shrink-0" />
+              <p className="text-xs text-zinc-300">
+                Délai dépassé de <strong className="text-brand-red">{overdueDays} jour{overdueDays > 1 ? 's' : ''}</strong>. Reprends contact avec l'élève si besoin.
+              </p>
+            </div>
+          )}
+
+          {/* Timer (caché si étape sans timer ou validée) */}
+          <DeadlineTimer
+            stepNumber={step.number}
+            stepData={stepData}
+            programEndDate={programEndDate}
+          />
+
+          {/* Historique d'extensions */}
+          {stepData?.nb_extensions > 0 && (
+            <div
+              title={stepData.extension_reason ? `Dernière raison : ${stepData.extension_reason}` : ''}
+              className="text-[11px] text-zinc-500 inline-flex items-center gap-1"
+            >
+              <Pencil size={10} />
+              Délai modifié {stepData.nb_extensions} fois
+              {stepData.extension_reason && ` — ${stepData.extension_reason}`}
+            </div>
+          )}
+
           {readOnly ? (
             <>
               <div className="flex items-center gap-2">
@@ -151,12 +226,30 @@ export default function StepCard({ step, stepData, studentId, readOnly, onUpdate
                 </a>
               )}
 
-              <div className="flex justify-end">
+              {/* Actions */}
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-brand-border">
+                {onEditDeadline && (stepData?.started_at || stepData?.status === 'in_progress' || stepData?.status === 'blocked') && (
+                  <Button variant="ghost" size="sm" onClick={() => onEditDeadline(step, stepData)}>
+                    <Pencil size={12} />
+                    Modifier le délai
+                  </Button>
+                )}
+                {form.status === 'validated' ? (
+                  <Button variant="secondary" size="sm" onClick={handleDevalidate} disabled={acting}>
+                    <RotateCcw size={12} />
+                    Dévalider
+                  </Button>
+                ) : (
+                  <Button size="sm" onClick={handleMarkDone} disabled={acting}>
+                    <CheckCircle2 size={12} />
+                    Marquer comme terminé
+                  </Button>
+                )}
                 <Button
+                  variant="secondary"
                   size="sm"
                   onClick={handleSave}
                   disabled={saving || !hasChanged}
-                  variant={hasChanged ? 'primary' : 'secondary'}
                 >
                   <Save size={12} />
                   {saving ? 'Sauvegarde...' : 'Sauvegarder'}

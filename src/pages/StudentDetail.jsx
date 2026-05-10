@@ -26,8 +26,8 @@ import { OfferTimer } from '../components/students/OfferTimer'
 import StudentForm from '../components/students/StudentForm'
 import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
-import { Textarea } from '../components/ui/Input'
-import { Select } from '../components/ui/Input'
+import Input, { Textarea, Select } from '../components/ui/Input'
+import { updateStepDeadline } from '../lib/stepActions'
 import { format, formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -54,6 +54,38 @@ export default function StudentDetail() {
   const [savingNote, setSavingNote] = useState(false)
   const [litigeText, setLitigeText] = useState('')
   const [savingLitige, setSavingLitige] = useState(false)
+
+  // Modal "Modifier le délai"
+  const [editDeadline, setEditDeadline] = useState(null)  // { step, stepData } | null
+  const [deadlineDays, setDeadlineDays] = useState('')
+  const [deadlineReason, setDeadlineReason] = useState('')
+  const [savingDeadline, setSavingDeadline] = useState(false)
+
+  function openEditDeadline(step, stepData) {
+    setEditDeadline({ step, stepData })
+    setDeadlineDays(String(stepData?.custom_delay_days ?? ''))
+    setDeadlineReason('')
+  }
+
+  async function saveDeadline() {
+    if (!editDeadline) return
+    const days = parseInt(deadlineDays, 10)
+    if (isNaN(days) || days < 0) return
+    setSavingDeadline(true)
+    const { data } = await updateStepDeadline({
+      studentId: id,
+      stepNumber: editDeadline.step.number,
+      days,
+      reason: deadlineReason.trim() || null,
+      currentNbExtensions: editDeadline.stepData?.nb_extensions ?? 0,
+      startedAt: editDeadline.stepData?.started_at,
+    })
+    setSavingDeadline(false)
+    if (data) {
+      setSteps(prev => prev.map(s => s.step_number === editDeadline.step.number ? data : s))
+      setEditDeadline(null)
+    }
+  }
 
   async function handleLitige() {
     setSavingLitige(true)
@@ -375,8 +407,10 @@ export default function StudentDetail() {
               step={step}
               stepData={steps.find(s => s.step_number === step.number)}
               studentId={id}
+              programEndDate={student.program_end_date}
               readOnly={isReadOnly}
               onUpdate={handleStepUpdate}
+              onEditDeadline={isCoach ? openEditDeadline : undefined}
             />
           ))}
         </div>
@@ -650,6 +684,49 @@ export default function StudentDetail() {
             </>
           )}
         </div>
+      </Modal>
+
+      {/* Modal modifier le délai d'une étape */}
+      <Modal
+        open={!!editDeadline}
+        onClose={() => setEditDeadline(null)}
+        title={editDeadline ? `Modifier le délai — Étape ${editDeadline.step.number}` : ''}
+        size="sm"
+      >
+        {editDeadline && (
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-400">
+              Étape : <strong className="text-white">{editDeadline.step.name}</strong>
+            </p>
+            <Input
+              label="Nouveau délai (jours)"
+              type="number"
+              min="0"
+              value={deadlineDays}
+              onChange={e => setDeadlineDays(e.target.value)}
+              placeholder="ex: 7"
+            />
+            <Textarea
+              label="Raison de l'ajustement (optionnel)"
+              value={deadlineReason}
+              onChange={e => setDeadlineReason(e.target.value)}
+              placeholder="Ex : élève en vacances, fournisseur en retard..."
+              rows={3}
+            />
+            {editDeadline.stepData?.nb_extensions > 0 && (
+              <p className="text-xs text-zinc-500">
+                Délai déjà modifié <strong className="text-white">{editDeadline.stepData.nb_extensions}</strong> fois.
+                {editDeadline.stepData.extension_reason && ` Dernière raison : "${editDeadline.stepData.extension_reason}".`}
+              </p>
+            )}
+            <div className="flex justify-end gap-2 pt-2 border-t border-brand-border">
+              <Button variant="secondary" onClick={() => setEditDeadline(null)}>Annuler</Button>
+              <Button onClick={saveDeadline} disabled={savingDeadline || !deadlineDays}>
+                {savingDeadline ? 'Sauvegarde...' : 'Sauvegarder'}
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )
