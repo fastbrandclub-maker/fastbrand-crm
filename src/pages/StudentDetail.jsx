@@ -79,6 +79,7 @@ export default function StudentDetail() {
       reason: deadlineReason.trim() || null,
       currentNbExtensions: editDeadline.stepData?.nb_extensions ?? 0,
       startedAt: editDeadline.stepData?.started_at,
+      actorId: profile?.id,
     })
     setSavingDeadline(false)
     if (data) {

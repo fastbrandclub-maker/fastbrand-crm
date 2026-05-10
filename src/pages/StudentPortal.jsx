@@ -109,6 +109,7 @@ export default function StudentPortal() {
       studentId: data.student.id,
       stepNumber: stepNum,
       by: 'student',
+      actorId: null,
       programEndDate: data.student.program_end_date,
     })
     setMarking(m => ({ ...m, [stepNum]: false }))

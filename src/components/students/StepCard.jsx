@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronRight, ExternalLink, Save, CheckCircle2, RotateCcw, Pencil, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 import { STEP_STATUS } from '../../lib/constants'
 import { StatusBadge } from '../ui/Badge'
 import { Select, Textarea } from '../ui/Input'
@@ -19,6 +20,7 @@ export default function StepCard({
   onUpdate,
   onEditDeadline,
 }) {
+  const { profile } = useAuth()
   const [open, setOpen] = useState(stepData?.status === 'in_progress' || stepData?.status === 'blocked')
   const [saving, setSaving] = useState(false)
   const [acting, setActing] = useState(false)
@@ -61,6 +63,7 @@ export default function StepCard({
       studentId,
       stepNumber: step.number,
       by: 'coach',
+      actorId: profile?.id,
       programEndDate,
     })
     setActing(false)
@@ -71,14 +74,16 @@ export default function StepCard({
   async function handleDevalidate() {
     if (!window.confirm(`Dévalider l'étape "${step.name}" ?`)) return
     setActing(true)
-    const { data } = await devalidateStep({
+    const { data, resetStep } = await devalidateStep({
       studentId,
       stepNumber: step.number,
       programEndDate,
       customDelayDays: stepData?.custom_delay_days,
+      actorId: profile?.id,
     })
     setActing(false)
     if (data) onUpdate(data)
+    if (resetStep) onUpdate(resetStep)
   }
 
   const statusConfig = STEP_STATUS[form.status] ?? STEP_STATUS.todo
