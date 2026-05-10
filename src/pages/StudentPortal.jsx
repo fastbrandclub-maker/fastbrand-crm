@@ -6,14 +6,19 @@ import {
   Zap, AlertTriangle, ChevronRight, ExternalLink, Timer,
   MessageSquare, CheckCircle2, Send, Loader2,
 } from 'lucide-react'
-import { differenceInDays } from 'date-fns'
+import { differenceInDays, format } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { getEndDate, OfferBadge } from '../components/students/OfferTimer'
 import { StatusBadge } from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Input, { Textarea, Select } from '../components/ui/Input'
 import DeadlineTimer from '../components/ui/DeadlineTimer'
-import { getDeadlineState, daysRemaining } from '../lib/deadlines'
+import {
+  getDeadlineState, daysRemaining, progressRatio,
+  effectiveDeadline, firstActiveStep,
+} from '../lib/deadlines'
 import { markStepValidated } from '../lib/stepActions'
+import { DEFAULT_STEP_DEADLINES } from '../config/programDefaults'
 
 const STATUS_OPTIONS = [
   { value: 'todo',        label: 'À faire' },
@@ -21,6 +26,69 @@ const STATUS_OPTIONS = [
   { value: 'validated',   label: 'Validé' },
   { value: 'blocked',     label: 'Bloqué' },
 ]
+
+// Sous-composant : Card "EN COURS" — affiche l'étape active (in_progress prioritaire,
+// sinon todo) avec son timer. Utilisée en sidebar gauche desktop + en mobile après
+// la card identité.
+function ActiveStepCard({ steps, programEndDate }) {
+  const active = firstActiveStep(steps)
+  if (!active) {
+    return (
+      <div className="bg-brand-surface border border-emerald-800/30 rounded-xl p-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">En cours</p>
+        <p className="text-sm text-emerald-400 font-medium">Programme terminé 🎉</p>
+      </div>
+    )
+  }
+
+  const stepDef = STEPS.find(s => s.number === active.step_number)
+  const cfg = DEFAULT_STEP_DEADLINES[active.step_number]
+  const cfgHasTimer = cfg && cfg.days != null
+  const state = getDeadlineState(active, active.step_number, programEndDate)
+  const days = daysRemaining(active, active.step_number, programEndDate)
+  const ratio = progressRatio(active, active.step_number, programEndDate)
+  const deadline = effectiveDeadline(active, active.step_number, programEndDate)
+
+  const styles = {
+    safe:    { text: 'text-emerald-400', bar: 'bg-emerald-500' },
+    urgent:  { text: 'text-amber-400',   bar: 'bg-amber-500' },
+    overdue: { text: 'text-brand-red',   bar: 'bg-brand-red' },
+  }
+  const s = state ? styles[state] : null
+
+  return (
+    <div className="bg-brand-surface border border-emerald-800/30 rounded-xl p-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">En cours</p>
+      <p className="text-sm font-bold text-white leading-snug">
+        Étape {active.step_number} — {stepDef?.name ?? ''}
+      </p>
+
+      {cfgHasTimer && s ? (
+        <>
+          <div className={`mt-3 flex items-center gap-1.5 text-sm font-semibold ${s.text}`}>
+            <Timer size={13} />
+            {state === 'overdue'
+              ? `${Math.abs(days)} jour${Math.abs(days) > 1 ? 's' : ''} de retard`
+              : days === 0
+                ? `Échéance aujourd'hui`
+                : `${days} jour${days > 1 ? 's' : ''} restant${days > 1 ? 's' : ''}`}
+          </div>
+          <div className="mt-2 h-1 bg-brand-border rounded-full overflow-hidden">
+            <div className={`h-full ${s.bar} rounded-full transition-all`}
+                 style={{ width: `${Math.min(100, ratio * 100)}%` }} />
+          </div>
+          {deadline && (
+            <p className="text-xs text-zinc-500 mt-2">
+              Échéance le {format(deadline, 'd MMM', { locale: fr })}
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="text-xs text-zinc-500 italic mt-3">Pas de timer — avance à ton rythme</p>
+      )}
+    </div>
+  )
+}
 
 // Sous-composant : feedback général. Factorisé pour être rendu en sidebar (compact)
 // sur desktop ET en bas du portail (full) sur mobile, avec un seul state partagé.
@@ -280,6 +348,9 @@ export default function StudentPortal() {
               <p className="text-xs text-zinc-500 mt-2">{validatedCount} / 9 étapes validées</p>
             </div>
 
+            {/* Card 3 — EN COURS */}
+            <ActiveStepCard steps={steps} programEndDate={student.program_end_date} />
+
           </aside>
 
           {/* ============ MAIN ============ */}
@@ -308,6 +379,11 @@ export default function StudentPortal() {
                 </div>
                 <p className="text-xs text-zinc-600 mt-1.5">Progression du programme · {validatedCount}/9 étapes validées</p>
               </div>
+            </div>
+
+            {/* EN COURS — MOBILE ONLY (sidebar gauche en desktop) */}
+            <div className="lg:hidden mb-5">
+              <ActiveStepCard steps={steps} programEndDate={student.program_end_date} />
             </div>
 
             {/* Étapes — toujours visible */}
