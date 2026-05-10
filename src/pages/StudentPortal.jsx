@@ -228,7 +228,7 @@ export default function StudentPortal() {
   return (
     <div className="min-h-screen bg-brand-dark pb-16">
       {/* Header sticky */}
-      <div className="bg-brand-surface border-b border-brand-border px-4 lg:px-8 py-4 sticky top-0 z-10">
+      <div className="bg-brand-surface border-b border-brand-border px-4 lg:px-6 py-4 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <div className="w-8 h-8 bg-brand-red rounded-lg flex items-center justify-center shrink-0">
             <Zap size={14} className="text-white" />
@@ -244,10 +244,10 @@ export default function StudentPortal() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 pt-5 lg:pt-6">
-        <div className="lg:grid lg:grid-cols-[320px_1fr] lg:gap-6">
+      <div className="max-w-7xl mx-auto px-4 lg:px-6 pt-5 lg:pt-6">
+        <div className="lg:grid lg:grid-cols-[280px_1fr_280px] xl:grid-cols-[300px_1fr_300px] lg:gap-4 xl:gap-5">
 
-          {/* ============ SIDEBAR — DESKTOP ONLY ============ */}
+          {/* ============ SIDEBAR GAUCHE — DESKTOP ONLY ============ */}
           <aside className="hidden lg:flex lg:flex-col lg:gap-3 lg:sticky lg:top-6 lg:self-start
                             lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
             {/* Card 1 — Identité */}
@@ -280,58 +280,6 @@ export default function StudentPortal() {
               <p className="text-xs text-zinc-500 mt-2">{validatedCount} / 9 étapes validées</p>
             </div>
 
-            {/* Card 3 — Mes documents */}
-            <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Mes documents</p>
-                <span className="text-xs font-bold text-brand-red bg-brand-red/15 px-1.5 py-0.5 rounded-full">
-                  {countWithLink}/9
-                </span>
-              </div>
-              <div className="space-y-1.5 max-h-72 overflow-y-auto">
-                {STEPS.map(step => {
-                  const sd = steps.find(s => s.step_number === step.number)
-                  const link = sd?.resource_link
-                  const status = sd?.status ?? 'todo'
-                  const cfg = STEP_STATUS[status] ?? STEP_STATUS.todo
-                  if (link) {
-                    return (
-                      <a
-                        key={step.number}
-                        href={link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={link}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors"
-                      >
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${cfg.bg} ${cfg.text}`}>
-                          {step.number}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-white font-medium truncate">{step.name}</p>
-                          <p className="text-xs text-zinc-500 truncate">{link}</p>
-                        </div>
-                        <ExternalLink size={11} className="text-zinc-500 shrink-0" />
-                      </a>
-                    )
-                  }
-                  return (
-                    <div key={step.number} className="flex items-center gap-2 px-2 py-1.5 opacity-40">
-                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-zinc-800 text-zinc-500">
-                        {step.number}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-zinc-400 truncate">{step.name}</p>
-                        <p className="text-xs text-zinc-600 italic">Pas encore de lien</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Card 4 — Feedback général (compact) */}
-            <FeedbackForm {...feedbackProps} compact />
           </aside>
 
           {/* ============ MAIN ============ */}
@@ -487,6 +435,63 @@ export default function StudentPortal() {
 
             <p className="text-center text-xs text-zinc-700 pb-4">FastBrand Club · Lien personnel — ne pas partager</p>
           </main>
+
+          {/* ============ SIDEBAR DROITE — DESKTOP ONLY ============ */}
+          <aside className="hidden lg:flex lg:flex-col lg:gap-3 lg:sticky lg:top-6 lg:self-start
+                            lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+            {/* Card — Mes documents */}
+            <div className="bg-brand-surface border border-brand-border rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Mes documents</p>
+                <span className="text-xs font-bold text-brand-red bg-brand-red/15 px-1.5 py-0.5 rounded-full">
+                  {countWithLink}/9
+                </span>
+              </div>
+              <div className="space-y-1.5 max-h-72 overflow-y-auto">
+                {STEPS.map(step => {
+                  const sd = steps.find(s => s.step_number === step.number)
+                  const link = sd?.resource_link
+                  const status = sd?.status ?? 'todo'
+                  const cfg = STEP_STATUS[status] ?? STEP_STATUS.todo
+                  if (link) {
+                    return (
+                      <a
+                        key={step.number}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={link}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors"
+                      >
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${cfg.bg} ${cfg.text}`}>
+                          {step.number}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-white font-medium truncate">{step.name}</p>
+                          <p className="text-xs text-zinc-500 truncate">{link}</p>
+                        </div>
+                        <ExternalLink size={11} className="text-zinc-500 shrink-0" />
+                      </a>
+                    )
+                  }
+                  return (
+                    <div key={step.number} className="flex items-center gap-2 px-2 py-1.5 opacity-40">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-zinc-800 text-zinc-500">
+                        {step.number}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-zinc-400 truncate">{step.name}</p>
+                        <p className="text-xs text-zinc-600 italic">Pas encore de lien</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Card — Feedback général (compact) */}
+            <FeedbackForm {...feedbackProps} compact />
+          </aside>
 
         </div>
       </div>
