@@ -27,8 +27,8 @@ import StudentForm from '../components/students/StudentForm'
 import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
 import Input, { Textarea, Select } from '../components/ui/Input'
-import { updateStepDeadline, devalidateStep } from '../lib/stepActions'
-import { DEFAULT_STEP_DEADLINES } from '../config/programDefaults'
+import { devalidateStep } from '../lib/stepActions'
+import EditDeadlineModal from '../components/students/EditDeadlineModal'
 import { format, formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -57,11 +57,8 @@ export default function StudentDetail() {
   const [litigeText, setLitigeText] = useState('')
   const [savingLitige, setSavingLitige] = useState(false)
 
-  // Modal "Modifier le délai"
+  // Modal "Modifier le délai" (composant partagé EditDeadlineModal)
   const [editDeadline, setEditDeadline] = useState(null)  // { step, stepData } | null
-  const [deadlineDays, setDeadlineDays] = useState('')
-  const [deadlineReason, setDeadlineReason] = useState('')
-  const [savingDeadline, setSavingDeadline] = useState(false)
 
   // Modal "Dévalider"
   const [devalidateTarget, setDevalidateTarget] = useState(null)  // { step, stepData } | null
@@ -118,29 +115,10 @@ export default function StudentDetail() {
 
   function openEditDeadline(step, stepData) {
     setEditDeadline({ step, stepData })
-    setDeadlineDays(String(stepData?.custom_delay_days ?? ''))
-    setDeadlineReason('')
   }
 
-  async function saveDeadline() {
-    if (!editDeadline) return
-    const days = parseInt(deadlineDays, 10)
-    if (isNaN(days) || days < 0) return
-    setSavingDeadline(true)
-    const { data } = await updateStepDeadline({
-      studentId: id,
-      stepNumber: editDeadline.step.number,
-      days,
-      reason: deadlineReason.trim() || null,
-      currentNbExtensions: editDeadline.stepData?.nb_extensions ?? 0,
-      startedAt: editDeadline.stepData?.started_at,
-      actorId: profile?.id,
-    })
-    setSavingDeadline(false)
-    if (data) {
-      setSteps(prev => prev.map(s => s.step_number === editDeadline.step.number ? data : s))
-      setEditDeadline(null)
-    }
+  function handleDeadlineSaved(updatedStep) {
+    setSteps(prev => prev.map(s => s.step_number === updatedStep.step_number ? updatedStep : s))
   }
 
   async function handleLitige() {
@@ -750,59 +728,16 @@ export default function StudentDetail() {
         </div>
       </Modal>
 
-      {/* Modal modifier le délai d'une étape */}
-      <Modal
+      {/* Modal modifier le délai d'une étape (composant partagé) */}
+      <EditDeadlineModal
         open={!!editDeadline}
         onClose={() => setEditDeadline(null)}
-        title={editDeadline ? `Modifier le délai — Étape ${editDeadline.step.number}` : ''}
-        size="sm"
-      >
-        {editDeadline && (() => {
-          const cfg = DEFAULT_STEP_DEADLINES[editDeadline.step.number]
-          const defaultLabel = typeof cfg?.days === 'number' ? `${cfg.days}j` : (cfg?.days === 'program_end' ? 'fin du programme' : '—')
-          const currentDays = editDeadline.stepData?.custom_delay_days ?? (typeof cfg?.days === 'number' ? cfg.days : null)
-          const currentLabel = currentDays != null ? `${currentDays}j` : defaultLabel
-          return (
-          <div className="space-y-4">
-            <p className="text-sm text-zinc-400">
-              Étape : <strong className="text-white">{editDeadline.step.name}</strong>
-            </p>
-            <div className="text-xs text-zinc-500 bg-brand-dark border border-brand-border rounded-md px-3 py-2 flex items-center justify-between">
-              <span>Délai par défaut : <strong className="text-zinc-300">{defaultLabel}</strong></span>
-              <span>Délai actuel : <strong className="text-white">{currentLabel}</strong></span>
-            </div>
-            <Input
-              label="Nouveau délai (jours)"
-              type="number"
-              min="1"
-              max="60"
-              value={deadlineDays}
-              onChange={e => setDeadlineDays(e.target.value)}
-              placeholder="ex: 7"
-            />
-            <Textarea
-              label="Raison de l'ajustement (optionnel)"
-              value={deadlineReason}
-              onChange={e => setDeadlineReason(e.target.value)}
-              placeholder="Ex : élève en vacances, fournisseur en retard..."
-              rows={3}
-            />
-            {editDeadline.stepData?.nb_extensions > 0 && (
-              <p className="text-xs text-zinc-500">
-                Délai déjà modifié <strong className="text-white">{editDeadline.stepData.nb_extensions}</strong> fois.
-                {editDeadline.stepData.extension_reason && ` Dernière raison : "${editDeadline.stepData.extension_reason}".`}
-              </p>
-            )}
-            <div className="flex justify-end gap-2 pt-2 border-t border-brand-border">
-              <Button variant="secondary" onClick={() => setEditDeadline(null)}>Annuler</Button>
-              <Button onClick={saveDeadline} disabled={savingDeadline || !deadlineDays}>
-                {savingDeadline ? 'Sauvegarde...' : 'Sauvegarder'}
-              </Button>
-            </div>
-          </div>
-          )
-        })()}
-      </Modal>
+        step={editDeadline?.step}
+        stepData={editDeadline?.stepData}
+        studentId={id}
+        actorId={profile?.id}
+        onSaved={handleDeadlineSaved}
+      />
 
       {/* Modal dévalider une étape */}
       <Modal
